@@ -2,6 +2,8 @@ apo    = require('actor_post_office')
 socket = require('socket')
 copas  = require('copas')
 
+require('util')
+
 require('spec_map')
 require('spec_proxy')
 
