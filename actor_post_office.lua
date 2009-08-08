@@ -23,9 +23,9 @@ local envelopes = {}
 
 local main_todos = {} -- array of funcs/closures, to be run on main thread.
 
-local function run_main_todos()
+local function run_main_todos(force)
   -- Check first if we're the main thread.
-  if coroutine.running() == nil then
+  if coroutine.running() == nil or force then
     local todo = nil
     repeat
       todo = table.remove(main_todos, 1)
@@ -89,9 +89,9 @@ local function step()
   return deliver_envelope(table.remove(envelopes, 1))
 end
 
-local function loop_until_empty()
+local function loop_until_empty(force)
   -- Check first if we're the main thread.
-  if coroutine.running() == nil then
+  if coroutine.running() == nil or force then
     local go = true
     while go do
       go = step()
@@ -156,6 +156,8 @@ local actor_post_office = {
   recv  = recv,
   send  = send,
   step  = step,
+  register   = register,
+  unregister = unregister,
   loop             = loop,
   loop_until_empty = loop_until_empty
 }
