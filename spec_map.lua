@@ -1,6 +1,6 @@
 spec_map = {
   get = {
-    go = function(map_data, skt, req, itr)
+    go = function(map_data, sess_addr, skt, cmdline, cmd, itr)
            for key in itr do
              data = map_data[key]
              if data then
@@ -12,7 +12,7 @@ spec_map = {
          end
   },
   set = {
-    go = function(map_data, skt, req, itr)
+    go = function(map_data, sess_addr, skt, cmdline, cmd, itr)
            local key  = itr()
            local flgs = itr()
            local expt = itr()
@@ -33,7 +33,7 @@ spec_map = {
          end
   },
   delete = {
-    go = function(map_data, skt, req, itr)
+    go = function(map_data, sess_addr, skt, cmdline, cmd, itr)
            local key = itr()
            if key then
              if map_data[key] then
@@ -49,7 +49,7 @@ spec_map = {
          end
   },
   quit = {
-    go = function(map_data, skt, req, itr)
+    go = function(map_data, sess_addr, skt, cmdline, cmd, itr)
            return false
          end
   }

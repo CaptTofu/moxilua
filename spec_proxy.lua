@@ -1,7 +1,14 @@
+function proxy_switch(self_addr)
+  while true do
+    skt, req, itr = apo.recv()
+    skt:send("OK\r\n")
+  end
+end
+
 spec_proxy = {
   get = {
-    go = function(downstreams, skt, req, itr)
-           apo.send(downstreams, skt, req, itr)
+    go = function(switch_addr, sess_addr, skt, cmdline, cmd, itr)
+           apo.send(downstreams, { from = skt, cmdline, cmd, itr })
            while true do
              local msg = apo.recv()
              if msg ~= 'quit' then
@@ -12,7 +19,7 @@ spec_proxy = {
          end
   },
   set = {
-    go = function(map_data, skt, req, itr)
+    go = function(switch_addr, sess_addr, skt, cmdline, cmd, itr)
            local key  = itr()
            local flgs = itr()
            local expt = itr()
@@ -22,7 +29,7 @@ spec_proxy = {
              if size >= 0 then
                local data = skt:receive(tonumber(size) + 2)
                if data then
-                 map_data[key] = data
+                 switch_addr[key] = data
                  skt:send("OK\r\n")
                  return true
                end
@@ -33,11 +40,11 @@ spec_proxy = {
          end
   },
   delete = {
-    go = function(map_data, skt, req, itr)
+    go = function(switch_addr, sess_addr, skt, cmdline, cmd, itr)
            local key = itr()
            if key then
-             if map_data[key] then
-               map_data[key] = nil
+             if switch_addr[key] then
+               switch_addr[key] = nil
                skt:send("DELETED\r\n")
              else
                skt:send("NOT_FOUND\r\n")
@@ -49,7 +56,7 @@ spec_proxy = {
          end
   },
   quit = {
-    go = function(map_data, skt, req, itr)
+    go = function(switch_addr, sess_addr, skt, cmdline, cmd, itr)
            return false
          end
   }
