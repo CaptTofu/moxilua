@@ -25,7 +25,7 @@ local main_todos = {} -- array of funcs/closures, to be run on main thread.
 
 local function run_main_todos(force)
   -- Check first if we're the main thread.
-  if coroutine.running() == nil or force then
+  if (coroutine.running() == nil) or force then
     local todo = nil
     repeat
       todo = table.remove(main_todos, 1)
@@ -91,7 +91,7 @@ end
 
 local function loop_until_empty(force)
   -- Check first if we're the main thread.
-  if coroutine.running() == nil or force then
+  if (coroutine.running() == nil) or force then
     local go = true
     while go do
       go = step()
@@ -127,7 +127,7 @@ end
 
 ----------------------------------------
 
-local function spawn(f, ...)
+local function spawn_with(spawner, f, ...)
   local child_coro = nil
   local child_addr = nil
   local child_arg = arg
@@ -136,7 +136,7 @@ local function spawn(f, ...)
                       unregister(child_addr)
                     end
 
-  child_coro = coroutine.create(child_fun)
+  child_coro = spawner(child_fun)
   child_addr = register(child_coro)
 
   table.insert(main_todos,
@@ -149,13 +149,18 @@ local function spawn(f, ...)
   return child_addr
 end
 
+local function spawn(f, ...)
+  return spawn_with(coroutine.create, f, ...)
+end
+
 ----------------------------------------
 
 local actor_post_office = {
-  spawn = spawn,
-  recv  = recv,
-  send  = send,
-  step  = step,
+  recv = recv,
+  send = send,
+  step = step,
+  spawn      = spawn,
+  spawn_with = spawn_with,
   register   = register,
   unregister = unregister,
   loop             = loop,

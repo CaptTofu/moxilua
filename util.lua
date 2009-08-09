@@ -17,6 +17,23 @@ function host_port(str, default_port)
   return host, port
 end
 
+-- Create a client connection to a "host:port" location,
+-- returning a copas-wrapped socket.
+--
+function connect(location)
+  local host, port = host_port(location, 11211)
+  if not host then
+    return nil
+  end
+
+  local sock = socket.connect(host, port)
+  if not sock then
+    return nil
+  end
+
+  return host, port, sock, copas.wrap(sock)
+end
+
 -- Groups items in itr by the key returned by key_func(itr).
 --
 function group_by(itr, key_func)
