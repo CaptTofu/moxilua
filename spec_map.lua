@@ -4,11 +4,11 @@ spec_map = {
            for key in itr do
              data = map_data[key]
              if data then
-               apo_socket.send(sess_addr, skt,
-                               "VALUE " .. key .. "\r\n" .. data)
+               asock.send(sess_addr, skt,
+                          "VALUE " .. key .. "\r\n" .. data)
              end
            end
-           apo_socket.send(sess_addr, skt, "END\r\n")
+           asock.send(sess_addr, skt, "END\r\n")
            return true
          end
   },
@@ -21,16 +21,16 @@ spec_map = {
            if key and flgs and expt and size then
              size = tonumber(size)
              if size >= 0 then
-               local data = apo_socket.recv(sess_addr, skt,
-                                            tonumber(size) + 2)
+               local data = asock.recv(sess_addr, skt,
+                                       tonumber(size) + 2)
                if data then
                  map_data[key] = data
-                 apo_socket.send(sess_addr, skt, "OK\r\n")
+                 asock.send(sess_addr, skt, "OK\r\n")
                  return true
                end
              end
            end
-           apo_socket.send(sess_addr, skt, "ERROR\r\n")
+           asock.send(sess_addr, skt, "ERROR\r\n")
            return true
          end
   },
@@ -40,12 +40,12 @@ spec_map = {
            if key then
              if map_data[key] then
                map_data[key] = nil
-               apo_socket.send(sess_addr, skt, "DELETED\r\n")
+               asock.send(sess_addr, skt, "DELETED\r\n")
              else
-               apo_socket.send(sess_addr, skt, "NOT_FOUND\r\n")
+               asock.send(sess_addr, skt, "NOT_FOUND\r\n")
              end
            else
-             apo_socket.send(sess_addr, skt, "ERROR\r\n")
+             asock.send(sess_addr, skt, "ERROR\r\n")
            end
            return true
          end

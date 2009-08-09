@@ -1,7 +1,7 @@
 socket = require('socket')
 
-apo        = require('actor_post_office')
-apo_socket = require('actor_socket')
+apo   = require('actor_post_office')
+asock = require('actor_socket')
 
 require('util')
 
@@ -16,7 +16,7 @@ function upstream_session(self_addr, upstream_skt, specs, go_data)
 print("us started", upstream_skt)
   local cmdline = true
   while cmdline do
-    cmdline = apo_socket.recv(self_addr, upstream_skt, "*l")
+    cmdline = asock.recv(self_addr, upstream_skt, "*l")
     if cmdline then
       local itr = string.gfind(cmdline, "%S+")
       local cmd = itr()
@@ -28,7 +28,7 @@ print("us started", upstream_skt)
             cmdline = nil
           end
         else
-          apo_socket.send(self_addr, upstream_skt, "ERROR\r\n")
+          asock.send(self_addr, upstream_skt, "ERROR\r\n")
         end
       end
     end
@@ -39,7 +39,7 @@ print("us closing", upstream_skt)
 end
 
 function upstream_accept(self_addr, server_skt, specs, go_data)
-  apo_socket.loop_accept(self_addr, server_skt, function(upstream_skt)
+  asock.loop_accept(self_addr, server_skt, function(upstream_skt)
     upstream_skt:settimeout(0)
     apo.spawn(upstream_session, upstream_skt, specs, go_data)
 print("ua spawned us", upstream_skt)
@@ -66,7 +66,7 @@ print("loop")
 
 while true do
   apo.loop_until_empty()
-  apo_socket.step()
+  asock.step()
 end
 
 print("done")

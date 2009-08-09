@@ -10,8 +10,8 @@ print("downstream", "recv", sess_addr)
         local sess_addr, skt, cmd, keys = apo.recv()
 print("downstream", "recv'ed", sess_addr, cmd, keys)
         for i = 1, #keys do
-          apo_socket.send(self_addr, skt,
-                          "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
+          asock.send(self_addr, skt,
+                     "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
 print("downstream", "sent ok ", keys[i])
         end
         apo.send(sess_addr, nil)
@@ -60,7 +60,7 @@ print("proxy.get send done", downstream);
 
 print("proxy.get gather done", downstream);
 
-           skt:send("END\r\n")
+           asock.send(sess_addr, skt, "END\r\n")
            return true
          end
   },
