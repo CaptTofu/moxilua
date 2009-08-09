@@ -17,8 +17,7 @@ function host_port(str, default_port)
   return host, port
 end
 
--- Create a client connection to a "host:port" location,
--- returning a copas-wrapped socket.
+-- Create a client connection to a "host:port" location.
 --
 function connect(location)
   local host, port = host_port(location, 11211)
@@ -31,7 +30,7 @@ function connect(location)
     return nil
   end
 
-  return host, port, sock, copas.wrap(sock)
+  return host, port, sock
 end
 
 -- Groups items in itr by the key returned by key_func(itr).

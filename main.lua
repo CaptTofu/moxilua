@@ -47,20 +47,18 @@ end
 
 host = "127.0.0.1"
 
-server = socket.bind(host, 11211)
-us_map = apo.spawn(upstream_accept, server,
-                   spec_map, {})
-
--- server = socket.bind(host, 11222)
+-- server = socket.bind(host, 11211)
 -- apo.spawn(upstream_accept, server,
---           spec_proxy, create_pool({"127.0.0.1:11211"}))
+--           spec_map, {})
+
+server = socket.bind(host, 11222)
+apo.spawn(upstream_accept, server,
+          spec_proxy, create_pool({"127.0.0.1:11211"}))
 
 print("loop")
 
 while true do
-print("loop", "lue")
   apo.loop_until_empty()
-print("loop", "socket.step")
   apo_socket.step()
 end
 

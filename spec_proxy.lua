@@ -1,13 +1,17 @@
 function spawn_downstream(location)
-  local host, port, conn_inner, conn = connect(location)
+  local host, port, conn = connect(location)
+
+print("downstream", "connected", location)
 
   local loop =
     function(self_addr)
       while true do
+print("downstream", "recv", sess_addr)
         local sess_addr, skt, cmd, keys = apo.recv()
-print("downstream", sess_addr, skt, cmd, keys)
+print("downstream", "recv'ed", sess_addr, cmd, keys)
         for i = 1, #keys do
-          apo.send(sess_addr, "send", "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
+          apo_socket.send(self_addr, skt,
+                          "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
 print("downstream", "sent ok ", keys[i])
         end
         apo.send(sess_addr, nil)
@@ -20,9 +24,11 @@ end
 
 function create_pool(locations)
   local downstream_addrs = {}
+
   for i, location in ipairs(locations) do
     table.insert(downstream_addrs, spawn_downstream(location))
   end
+
   return {
     choose = function(key)
                return downstream_addrs[1]
@@ -33,31 +39,28 @@ end
 spec_proxy = {
   get = {
     go = function(pool, sess_addr, skt, cmdline, cmd, itr)
+print("proxy.get", cmdline);
            local groups = group_by(itr, function(key)
                                           return pool.choose(key)
                                         end)
            local i = 0
            for downstream, keys in pairs(groups) do
+print("proxy.get send downstream", downstream);
              apo.send(downstream, sess_addr, skt, "get", keys)
              i = i + 1
            end
 
+print("proxy.get send done", downstream);
+
            local j = 0
            while j < i do
-             repeat
-               cmd, msg = apo.recv()
-               if cmd == "send" then
-                 skt:send(msg)
-print("sess sending", msg)
-               end
-             until not cmd
-print("sess received one")
+             apo.recv()
              j = j + 1
            end
 
-           skt:send("END\r\n")
+print("proxy.get gather done", downstream);
 
-print("done", i, j)
+           skt:send("END\r\n")
            return true
          end
   },
