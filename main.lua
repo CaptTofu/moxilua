@@ -13,6 +13,7 @@ print("start")
 ----------------------------------------
 
 function upstream_session(self_addr, upstream_skt, specs, go_data)
+print("us started", upstream_skt)
   local cmdline = true
   while cmdline do
     cmdline = apo_socket.recv(self_addr, upstream_skt, "*l")
@@ -33,6 +34,7 @@ function upstream_session(self_addr, upstream_skt, specs, go_data)
     end
   end
 
+print("us closing", upstream_skt)
   upstream_skt:close()
 end
 
@@ -40,6 +42,7 @@ function upstream_accept(self_addr, server_skt, specs, go_data)
   apo_socket.loop_accept(self_addr, server_skt, function(upstream_skt)
     upstream_skt:settimeout(0)
     apo.spawn(upstream_session, upstream_skt, specs, go_data)
+print("ua spawned us", upstream_skt)
   end)
 end
 
@@ -47,13 +50,17 @@ end
 
 host = "127.0.0.1"
 
--- server = socket.bind(host, 11211)
--- apo.spawn(upstream_accept, server,
---           spec_map, {})
+server = socket.bind(host, 11211)
+apo.spawn(upstream_accept, server,
+          spec_map, {})
 
 server = socket.bind(host, 11222)
 apo.spawn(upstream_accept, server,
-          spec_proxy, create_pool({"127.0.0.1:11211"}))
+          spec_map, {})
+
+-- server = socket.bind(host, 11222)
+-- apo.spawn(upstream_accept, server,
+--           spec_proxy, create_pool({"127.0.0.1:11211"}))
 
 print("loop")
 

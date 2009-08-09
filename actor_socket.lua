@@ -14,16 +14,22 @@ local waiting_actors = {} -- Keyed by socket, value is actor addr.
 
 ------------------------------------------
 
-local function skt_dequeue(skt, sockets, reverse)
+local function skt_unwait(skt, sockets, reverse)
   waiting_actors[skt] = nil
-  local i = reverse[skt]
-  if i then
+  local cur = reverse[skt]
+  if cur then
     reverse[skt] = nil
-    table.remove(sockets, i)
+    local num = #sockets
+    local top = sockets[num]
+    sockets[num] = nil
+    if cur < num then
+      sockets[cur] = top
+      reverse[top] = cur
+    end
   end
 end
 
-local function skt_enqueue(skt, sockets, reverse, actor_addr)
+local function skt_wait(skt, sockets, reverse, actor_addr)
   waiting_actors[skt] = actor_addr
   table.insert(sockets, skt)
   reverse[skt] = #sockets
@@ -34,26 +40,18 @@ end
 local function awake_actor(skt)
   local actor_addr = waiting_actors[skt]
 
-  skt_dequeue(skt, reading, reverse_r)
-  skt_dequeue(skt, writing, reverse_w)
+  skt_unwait(skt, reading, reverse_r)
+  skt_unwait(skt, writing, reverse_w)
 
   if actor_addr then
-    waiting_actors[skt] = nil
-
-    apo.send_async(actor_addr, skt)
+    apo.send_later(actor_addr, skt)
   end
 end
 
-local function process_ready(name, waiting, ready, func)
-  local waiting_next = {}
-  for i, skt in ipairs(waiting) do
-    if ready[skt] then
-      func(skt)
-    else
-      table.insert(waiting_next, skt)
-    end
+local function process_ready(ready, name)
+  for i = 1, #ready do
+    awake_actor(ready[i])
   end
-  return waiting_next
 end
 
 local function step(timeout)
@@ -63,8 +61,8 @@ local function step(timeout)
 
   local readable, writable, err = socket.select(reading, writing, timeout)
 
-  reading = process_ready("r", reading, readable, awake_actor)
-  writing = process_ready("w", writing, writable, awake_actor)
+  process_ready(readable, "r")
+  process_ready(writable, "w")
 
   if err == "timeout" and (#readable + #writable) > 0 then
     return nil
@@ -79,14 +77,14 @@ local function recv(actor_addr, skt, pattern, part)
   local s, err
 
   repeat
-    skt_dequeue(skt, reading, reverse_r)
+    skt_unwait(skt, reading, reverse_r)
 
     s, err, part = skt:receive(pattern, part)
     if s or err ~= "timeout" then
       return s, err, part
     end
 
-    skt_enqueue(skt, reading, reverse_r, actor_addr)
+    skt_wait(skt, reading, reverse_r, actor_addr)
 
     coroutine.yield()
   until false
@@ -98,31 +96,31 @@ local function send(actor_addr, skt, data, from, to)
   local lastIndex = from - 1
 
   repeat
-    skt_dequeue(skt, writing, reverse_w)
+    skt_unwait(skt, writing, reverse_w)
 
     s, err, lastIndex = skt:send(data, lastIndex + 1, to)
     if s or err ~= "timeout" then
        return s, err, lastIndex
     end
 
-    skt_enqueue(skt, writing, reverse_w, actor_addr)
+    skt_wait(skt, writing, reverse_w, actor_addr)
 
     coroutine.yield()
   until false
 end
 
 local function loop_accept(actor_addr, skt, handler, timeout)
-  skt:settimeout(timeout or 0.01)
+  skt:settimeout(timeout or 0)
 
   repeat
-    skt_dequeue(skt, reading, reverse_r)
+    skt_unwait(skt, reading, reverse_r)
 
-    local client_skt = skt:accept()
+    local client_skt, err = skt:accept()
     if client_skt then
       handler(client_skt)
     end
 
-    skt_enqueue(skt, reading, reverse_r, actor_addr)
+    skt_wait(skt, reading, reverse_r, actor_addr)
 
     coroutine.yield()
   until false
