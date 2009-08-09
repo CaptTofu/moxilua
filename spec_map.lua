@@ -4,10 +4,11 @@ spec_map = {
            for key in itr do
              data = map_data[key]
              if data then
-               skt:send("VALUE " .. key .. "\r\n" .. data)
+               apo_socket.send(sess_addr, skt,
+                               "VALUE " .. key .. "\r\n" .. data)
              end
            end
-           skt:send("END\r\n")
+           apo_socket.send(sess_addr, skt, "END\r\n")
            return true
          end
   },
@@ -20,15 +21,16 @@ spec_map = {
            if key and flgs and expt and size then
              size = tonumber(size)
              if size >= 0 then
-               local data = skt:receive(tonumber(size) + 2)
+               local data = apo_socket.recv(sess_addr, skt,
+                                            tonumber(size) + 2)
                if data then
                  map_data[key] = data
-                 skt:send("OK\r\n")
+                 apo_socket.send(sess_addr, skt, "OK\r\n")
                  return true
                end
              end
            end
-           skt:send("ERROR\r\n")
+           apo_socket.send(sess_addr, skt, "ERROR\r\n")
            return true
          end
   },
@@ -38,12 +40,12 @@ spec_map = {
            if key then
              if map_data[key] then
                map_data[key] = nil
-               skt:send("DELETED\r\n")
+               apo_socket.send(sess_addr, skt, "DELETED\r\n")
              else
-               skt:send("NOT_FOUND\r\n")
+               apo_socket.send(sess_addr, skt, "NOT_FOUND\r\n")
              end
            else
-             skt:send("ERROR\r\n")
+             apo_socket.send(sess_addr, skt, "ERROR\r\n")
            end
            return true
          end

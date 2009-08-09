@@ -1,6 +1,7 @@
-apo    = require('actor_post_office')
 socket = require('socket')
-copas  = require('copas')
+
+apo        = require('actor_post_office')
+apo_socket = require('actor_socket')
 
 require('util')
 
@@ -11,35 +12,35 @@ print("start")
 
 ----------------------------------------
 
-function upstream_sess(specs, go_data)
-  return function(skt_in)
-    local self_addr = apo.register(coroutine.running())
-
-    skt = copas.wrap(skt_in)
-
-    local cmdline = true
-    while cmdline do
-      cmdline = skt:receive()
-      if cmdline then
-        local itr = string.gfind(cmdline, "%S+")
-        local cmd = itr()
-        if cmd then
-          local spec = specs[cmd]
-          if spec then
-            if not spec.go(go_data, self_addr, skt, cmdline, cmd, itr) then
-              cmdline = nil
-            end
-          else
-            skt:send("ERROR\r\n")
+function upstream_session(self_addr, upstream_skt, specs, go_data)
+  local cmdline = true
+  while cmdline do
+    cmdline = apo_socket.recv(self_addr, upstream_skt, "*l")
+    if cmdline then
+      local itr = string.gfind(cmdline, "%S+")
+      local cmd = itr()
+      if cmd then
+        local spec = specs[cmd]
+        if spec then
+          if not spec.go(go_data, self_addr, upstream_skt,
+                         cmdline, cmd, itr) then
+            cmdline = nil
           end
+        else
+          apo_socket.send(self_addr, upstream_skt, "ERROR\r\n")
         end
       end
     end
-
-    skt_in:close()
-
-    apo.unregister(self_addr)
   end
+
+  upstream_skt:close()
+end
+
+function upstream_accept(self_addr, server_skt, specs, go_data)
+  apo_socket.loop_accept(self_addr, server_skt, function(upstream_skt)
+    upstream_skt:settimeout(0)
+    apo.spawn(upstream_session, upstream_skt, specs, go_data)
+  end)
 end
 
 ----------------------------------------
@@ -47,16 +48,20 @@ end
 host = "127.0.0.1"
 
 server = socket.bind(host, 11211)
-copas.addserver(server, upstream_sess(spec_map, {}))
+us_map = apo.spawn(upstream_accept, server,
+                   spec_map, {})
 
-server = socket.bind(host, 11222)
-copas.addserver(server, upstream_sess(spec_proxy, {}))
+-- server = socket.bind(host, 11222)
+-- apo.spawn(upstream_accept, server,
+--           spec_proxy, create_pool({"127.0.0.1:11211"}))
 
 print("loop")
 
 while true do
+print("loop", "lue")
   apo.loop_until_empty()
-  copas.step()
+print("loop", "socket.step")
+  apo_socket.step()
 end
 
 print("done")

@@ -109,12 +109,16 @@ end
 
 local function send_msg(dest_addr, msg)
   table.insert(envelopes, { dest_addr = dest_addr, msg = msg })
+end
 
-  loop_until_empty()
+local function send_async(dest_addr, ...)
+  send_msg(dest_addr, arg)
 end
 
 local function send(dest_addr, ...)
   send_msg(dest_addr, arg)
+
+  loop_until_empty()
 end
 
 local function recv()
@@ -155,10 +159,11 @@ end
 
 ----------------------------------------
 
-local actor_post_office = {
-  recv = recv,
-  send = send,
-  step = step,
+return {
+  recv       = recv,
+  send       = send,
+  send_async = send_async,
+  step       = step,
   spawn      = spawn,
   spawn_with = spawn_with,
   register   = register,
@@ -166,8 +171,6 @@ local actor_post_office = {
   loop             = loop,
   loop_until_empty = loop_until_empty
 }
-
-return actor_post_office
 
 end
 
