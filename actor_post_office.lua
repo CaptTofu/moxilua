@@ -107,14 +107,23 @@ end
 
 ----------------------------------------
 
+-- Asynchronous send of a msg table.
+--
 local function send_msg(dest_addr, msg)
   table.insert(envelopes, { dest_addr = dest_addr, msg = msg })
 end
 
-local function send_async(dest_addr, ...)
+-- Asynchronous send of variable args as a message.
+--
+local function send_later(dest_addr, ...)
   send_msg(dest_addr, arg)
 end
 
+-- Asynchronous send of variable args as a message.
+--
+-- Unlike send_later(), a send() might opportunistically,
+-- process the message immediately before returning.
+--
 local function send(dest_addr, ...)
   send_msg(dest_addr, arg)
 
@@ -162,7 +171,7 @@ end
 return {
   recv       = recv,
   send       = send,
-  send_async = send_async,
+  send_later = send_later,
   step       = step,
   spawn      = spawn,
   spawn_with = spawn_with,
