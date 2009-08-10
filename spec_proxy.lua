@@ -65,13 +65,15 @@ function create_pool(locations)
     end
   end
 
-  for i, location in ipairs(locations) do
-    downstream_addrs[i] = spawn_downstream(location, cleanup)
-  end
-
   return {
     choose = function(key)
-               return downstream_addrs[1]
+               local i = 1
+               local x = downstream_addrs[i]
+               if not x then
+                 x = spawn_downstream(locations[i], cleanup)
+                 downstream_addrs[i] = x
+               end
+               return x
              end
   }
 end
