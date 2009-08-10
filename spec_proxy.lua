@@ -1,15 +1,66 @@
-function spawn_downstream(location, done_func)
-  local host, port, conn, err = connect(location)
+local function close(...)
+  for i, conn in ipairs(arg) do
+    conn:close()
+  end
+  return nil
+end
+
+local function spawn_downstream(location, done_func)
+  -- Here, dconn means downstream connection,
+  -- and, uconn means upstream connection.
+  --
+  local host, port, dconn, err = connect(location)
 
   local loop =
     function(self_addr)
-      while conn do
-        local sess_addr, skt, cmd, keys = apo.recv()
+      while dconn do
+        local sess_addr, uconn, cmd, keys = apo.recv()
 
-        for i = 1, #keys do
-          asock.send(self_addr, skt,
-                     "VALUE " .. cmd .. " key " .. keys[i] .. "\r\n")
+        local head
+        local body
+        local line = "get " .. array_join(keys) .. "\r\n"
+
+print("sd", line)
+
+        local ok = asock.send(self_addr, dconn, line)
+
+print("sd", "asock.send", dconn, ok)
+
+        if ok then
+          repeat
+print("sd", "asock.recv head", dconn)
+
+            head = asock.recv(self_addr, dconn)
+
+print("sd", "asock.recv head", dconn, head)
+
+            if head then
+              if head ~= "END" then
+                ok = asock.send(self_addr, uconn, head .. "\r\n")
+                if ok then
+                  if string.find(head, "^VALUE ") then
+                    body = asock.recv(self_addr, dconn)
+                    if body then
+                      ok = asock.send(self_addr, uconn, body .. "\r\n")
+                      if not ok then
+                        dconn, uconn = close(dconn, uconn)
+                      end
+                    else
+                      dconn = close(dconn)
+                    end
+                  end
+                else
+                  dconn, uconn = close(dconn, uconn)
+                end
+              end
+            else
+              dconn = close(dconn)
+            end
+          until dconn == nil or uconn == nil or head == "END"
+        else
+          dconn = close(dconn)
         end
+
         apo.send(sess_addr, nil)
       end
 

@@ -47,17 +47,13 @@ end
 
 host = "127.0.0.1"
 
-server = socket.bind(host, 11211)
+server = socket.bind(host, 11311)
 apo.spawn(upstream_accept, server,
           spec_map, {})
 
-apo.loop_until_empty()
-
-server = socket.bind(host, 11222)
+server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
           spec_proxy, create_pool({"127.0.0.1:11211"}))
-
-apo.loop_until_empty()
 
 print("loop")
 
