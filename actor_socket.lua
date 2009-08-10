@@ -91,14 +91,13 @@ local function recv(actor_addr, skt, pattern, part)
 end
 
 local function send(actor_addr, skt, data, from, to)
-  local s, err,sent
   from = from or 1
   local lastIndex = from - 1
 
   repeat
     skt_unwait(skt, writing, reverse_w)
 
-    s, err, lastIndex = skt:send(data, lastIndex + 1, to)
+    local s, err, lastIndex = skt:send(data, lastIndex + 1, to)
     if s or err ~= "timeout" then
        return s, err, lastIndex
     end
