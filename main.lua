@@ -53,7 +53,7 @@ apo.spawn(upstream_accept, server,
 
 server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
-          spec_proxy, create_pool({"127.0.0.1:11211"}))
+          spec_proxy, create_pool({"127.0.0.1:11311"}))
 
 print("loop")
 

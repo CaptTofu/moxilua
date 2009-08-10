@@ -20,20 +20,11 @@ local function spawn_downstream(location, done_func)
         local body
         local line = "get " .. array_join(keys) .. "\r\n"
 
-print("sd", line)
-
         local ok = asock.send(self_addr, dconn, line)
-
-print("sd", "asock.send", dconn, ok)
 
         if ok then
           repeat
-print("sd", "asock.recv head", dconn)
-
             head = asock.recv(self_addr, dconn)
-
-print("sd", "asock.recv head", dconn, head)
-
             if head then
               if head ~= "END" then
                 ok = asock.send(self_addr, uconn, head .. "\r\n")
