@@ -13,19 +13,14 @@ print("start")
 ----------------------------------------
 
 function upstream_session(self_addr, upstream_skt, specs, go_data)
-print("us started", upstream_skt)
   local cmdline = true
   while cmdline do
-print("us started", upstream_skt, "asoc.recv'ing")
     cmdline = asock.recv(self_addr, upstream_skt, "*l")
-print("us started", upstream_skt, "asoc.recv'ed", cmdline)
     if cmdline then
       local itr = string.gfind(cmdline, "%S+")
       local cmd = itr()
       if cmd then
-print("us started", upstream_skt, "asoc.recv'ed", cmdline, cmd)
         local spec = specs[cmd]
-print("us started", upstream_skt, "asoc.recv'ed", cmdline, cmd, spec)
         if spec then
           if not spec.go(go_data, self_addr, upstream_skt,
                          cmdline, cmd, itr) then
@@ -38,7 +33,6 @@ print("us started", upstream_skt, "asoc.recv'ed", cmdline, cmd, spec)
     end
   end
 
-print("us closing", upstream_skt)
   upstream_skt:close()
 end
 
@@ -46,7 +40,6 @@ function upstream_accept(self_addr, server_skt, specs, go_data)
   asock.loop_accept(self_addr, server_skt, function(upstream_skt)
     upstream_skt:settimeout(0)
     apo.spawn(upstream_session, upstream_skt, specs, go_data)
-print("ua spawned us", upstream_skt)
   end)
 end
 

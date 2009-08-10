@@ -8,7 +8,7 @@ function spawn_downstream(location, done_func)
 
         for i = 1, #keys do
           asock.send(self_addr, skt,
-                     "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
+                     "VALUE " .. cmd .. " key " .. keys[i] .. "\r\n")
         end
         apo.send(sess_addr, nil)
       end
