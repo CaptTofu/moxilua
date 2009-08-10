@@ -70,14 +70,21 @@ end
 
 ----------------------------------------
 
+local function resume(coro, ...)
+  if coro and coroutine.status(coro) ~= 'dead' then
+    local ok = coroutine.resume(coro, ...)
+    if not ok then
+      print(debug.traceback(coro))
+    end
+    return ok
+  end
+  return false
+end
+
 local function deliver_envelope(envelope)
   -- Must be invoked on main thread.
   if envelope then
-    local coro = map_addr_to_coro[envelope.dest_addr]
-    if coro and coroutine.status(coro) ~= 'dead' then
-      coroutine.resume(coro, unpack(envelope.msg))
-    end
-    return true
+    return resume(map_addr_to_coro[envelope.dest_addr], unpack(envelope.msg))
   end
   return false
 end
@@ -154,7 +161,7 @@ local function spawn_with(spawner, f, ...)
 
   table.insert(main_todos,
     function()
-      coroutine.resume(child_coro)
+      resume(child_coro)
     end)
 
   run_main_todos()

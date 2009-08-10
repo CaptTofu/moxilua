@@ -25,12 +25,12 @@ function connect(location)
     return nil
   end
 
-  local sock = socket.connect(host, port)
+  local sock, err = socket.connect(host, port)
   if not sock then
-    return nil
+    return nil, nil, nil, err
   end
 
-  return host, port, sock
+  return host, port, sock, nil
 end
 
 -- Groups items in itr by the key returned by key_func(itr).
