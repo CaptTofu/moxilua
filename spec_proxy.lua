@@ -1,10 +1,3 @@
-local function close(...)
-  for i, conn in ipairs(arg) do
-    conn:close()
-  end
-  return nil
-end
-
 local function spawn_downstream(location, done_func)
   -- Here, dconn means downstream connection,
   -- and, uconn means upstream connection.

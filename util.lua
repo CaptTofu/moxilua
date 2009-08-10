@@ -35,6 +35,17 @@ function connect(location)
   return host, port, sock, nil
 end
 
+-- Helper function to close connections, like...
+--
+--   c1, c2, c3 = close(c1, c2, c3)
+--
+local function close(...)
+  for i, conn in ipairs(arg) do
+    conn:close()
+  end
+  return nil
+end
+
 -- Groups items in itr by the key returned by key_func(itr).
 --
 function group_by(itr, key_func)
