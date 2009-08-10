@@ -30,6 +30,8 @@ function connect(location)
     return nil, nil, nil, err
   end
 
+  sock:settimeout(0)
+
   return host, port, sock, nil
 end
 
