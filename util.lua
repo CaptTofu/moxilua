@@ -38,12 +38,12 @@ end
 function group_by(itr, key_func)
   local groups = {}
   for x in itr do
-    local key = key_func(x)
-    local group = groups[key]
-    if not group then
-      groups[key] = { x }
+    local k = assert(key_func(x))
+    local g = groups[k]
+    if g then
+      table.insert(g, x)
     else
-      table.insert(group, x)
+      groups[k] = { x }
     end
   end
   return groups
@@ -90,8 +90,8 @@ function TEST_group_by()
   gb = group_by(array_iter({1, 2, 2, 3, 3, 3}),
                 function(x) return x end)
   for k, v in pairs(gb) do
-    assert(k == #v)
     print(k, #v, unpack(v))
+    assert(k == #v)
   end
 end
 

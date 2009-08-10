@@ -1,22 +1,19 @@
-function spawn_downstream(location)
-  local host, port, conn = connect(location)
-
-print("downstream", "connected", location)
+function spawn_downstream(location, done_func)
+  local host, port, conn, err = connect(location)
 
   local loop =
     function(self_addr)
-      while true do
-print("downstream", "recv", sess_addr)
+      while conn do
         local sess_addr, skt, cmd, keys = apo.recv()
-print("downstream", "recv'ed", sess_addr, cmd, keys)
+
         for i = 1, #keys do
           asock.send(self_addr, skt,
                      "OK " .. cmd .. " key " .. keys[i] .. "\r\n")
-print("downstream", "sent ok ", keys[i])
         end
         apo.send(sess_addr, nil)
-print("downstream", "sent done")
       end
+
+      done_func(self_addr)
     end
 
   return apo.spawn(loop)
@@ -25,8 +22,16 @@ end
 function create_pool(locations)
   local downstream_addrs = {}
 
+  local function cleanup(downstream_addr)
+    for i, d in ipairs(downstream_addrs) do
+      if downstream_addr == d then
+        downstream_addrs[i] = nil
+      end
+    end
+  end
+
   for i, location in ipairs(locations) do
-    table.insert(downstream_addrs, spawn_downstream(location))
+    downstream_addrs[i] = spawn_downstream(location, cleanup)
   end
 
   return {
@@ -39,26 +44,20 @@ end
 spec_proxy = {
   get = {
     go = function(pool, sess_addr, skt, cmdline, cmd, itr)
-print("proxy.get", cmdline);
            local groups = group_by(itr, function(key)
                                           return pool.choose(key)
                                         end)
            local i = 0
-           for downstream, keys in pairs(groups) do
-print("proxy.get send downstream", downstream);
-             apo.send(downstream, sess_addr, skt, "get", keys)
+           for downstream_addr, keys in pairs(groups) do
+             apo.send(downstream_addr, sess_addr, skt, cmd, keys)
              i = i + 1
            end
-
-print("proxy.get send done", downstream);
 
            local j = 0
            while j < i do
              apo.recv()
              j = j + 1
            end
-
-print("proxy.get gather done", downstream);
 
            asock.send(sess_addr, skt, "END\r\n")
            return true

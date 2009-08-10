@@ -16,12 +16,16 @@ function upstream_session(self_addr, upstream_skt, specs, go_data)
 print("us started", upstream_skt)
   local cmdline = true
   while cmdline do
+print("us started", upstream_skt, "asoc.recv'ing")
     cmdline = asock.recv(self_addr, upstream_skt, "*l")
+print("us started", upstream_skt, "asoc.recv'ed", cmdline)
     if cmdline then
       local itr = string.gfind(cmdline, "%S+")
       local cmd = itr()
       if cmd then
+print("us started", upstream_skt, "asoc.recv'ed", cmdline, cmd)
         local spec = specs[cmd]
+print("us started", upstream_skt, "asoc.recv'ed", cmdline, cmd, spec)
         if spec then
           if not spec.go(go_data, self_addr, upstream_skt,
                          cmdline, cmd, itr) then
@@ -54,13 +58,13 @@ server = socket.bind(host, 11211)
 apo.spawn(upstream_accept, server,
           spec_map, {})
 
+apo.loop_until_empty()
+
 server = socket.bind(host, 11222)
 apo.spawn(upstream_accept, server,
-          spec_map, {})
+          spec_proxy, create_pool({"127.0.0.1:11211"}))
 
--- server = socket.bind(host, 11222)
--- apo.spawn(upstream_accept, server,
---           spec_proxy, create_pool({"127.0.0.1:11211"}))
+apo.loop_until_empty()
 
 print("loop")
 
