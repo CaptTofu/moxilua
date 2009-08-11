@@ -1,6 +1,3 @@
-recv = apo.recv
-send = apo.send
-
 function sock_recv(skt, pattern)
   return asock.recv(apo.self_address(), skt, pattern)
 end
