@@ -125,12 +125,28 @@ local function loop_accept(actor_addr, skt, handler, timeout)
   until false
 end
 
+local function send_recv(self_addr, conn, msg, recv_callback)
+  local ok = asock.send(self_addr, conn, msg)
+  if not ok then
+    return nil
+  end
+
+  local rv = asock.recv(self_addr, conn)
+  if rv and recv_callback then
+    recv_callback(rv)
+  end
+
+  return rv
+end
+
+
 ------------------------------------------
 
 return {
   step = step,
   recv = recv,
   send = send,
+  send_recv = send_recv,
   loop_accept = loop_accept
 }
 
