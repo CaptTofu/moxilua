@@ -86,16 +86,16 @@ assert(got_last[1] == "OK")
 
 fresh()
 assert(client_ascii.get(c, got, {"a"}))
-pa(got_last)
 assert(#got_last == 0)
 
-c:send("set a 0 0 5\r\n")
-c:send("hello\r\n")
+fresh()
+assert(client_ascii.set(c, got, {"a", "0", "0", "5"}, "hello"))
+assert(got_last[1] == "STORED")
 
-p("sent set")
-
-pa(read_end(c))
-
-client_ascii.get(c, p, {"a", "x"})
+fresh()
+assert(client_ascii.get(c, got, {"a"}))
+assert(string.find(got_last[1], "^VALUE a"))
+assert(got_last[2] == "hello")
+assert(#got_last == 2)
 
 p("done!")
