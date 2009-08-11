@@ -48,16 +48,27 @@ function create_downstream_pool(locations)
     end
   end
 
+  local function find_downstream(i)
+    local x = downstream_addrs[i]
+    if not x then
+      x = spawn_downstream(locations[i], done_func)
+      downstream_addrs[i] = x
+    end
+    return x
+  end
+
   return {
-    choose = function(key)
-               local i = 1
-               local x = downstream_addrs[i]
-               if not x then
-                 x = spawn_downstream(locations[i], done_func)
-                 downstream_addrs[i] = x
-               end
-               return x
-             end
+    choose =
+      function(key)
+        return find_downstream(1)
+      end,
+
+    each =
+      function(each_func)
+        for i = 1, #locations do
+          each_func(find_downstream(i))
+        end
+      end
   }
 end
 

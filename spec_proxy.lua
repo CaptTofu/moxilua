@@ -61,6 +61,23 @@ spec_proxy = {
       return true
     end,
 
+  flush_all =
+    function(pool, sess_addr, skt, cmdline, cmd, itr)
+      local n = 0
+      pool.each(
+        function(downstream_addr)
+          apo.send(downstream_addr, sess_addr, skt, cmd, {key})
+          n = n + 1
+        end)
+
+      for i = 1, n do
+        apo.recv()
+      end
+
+      asock.send(sess_addr, skt, "OK\r\n")
+      return true
+    end,
+
   quit =
     function(pool, sess_addr, skt, cmdline, cmd, itr)
       return false

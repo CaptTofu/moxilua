@@ -45,8 +45,15 @@ spec_client = {
   delete =
     function(self_addr, conn, cmd, value_callback, args)
       return sock_send_recv(conn,
-                             "delete " .. args[1] .. "\r\n",
-                             value_callback)
+                            "delete " .. args[1] .. "\r\n",
+                            value_callback)
+    end,
+
+  flush_all =
+    function(self_addr, conn, cmd, value_callback, args)
+      return sock_send_recv(conn,
+                            "flush_all\r\n",
+                            value_callback)
     end
 }
 

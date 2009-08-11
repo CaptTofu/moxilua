@@ -1,9 +1,48 @@
-require 'socket'
+socket = require 'socket'
+apo    = require('actor_post_office')
+asock  = require('actor_socket')
+
 require 'util'
 
 p = print
 
-term = { 'END', 'OK', 'STORED' }
+function printa(a)
+  for i, v in ipairs(a) do
+    p(i, v)
+  end
+end
+
+pa = printa
+
+------------------------------------------
+
+sock_recv = function(skt, pattern)
+  return skt:receive(pattern or "*l")
+end
+
+sock_send = function(skt, data, from, to)
+  return skt:send(data, from, to)
+end
+
+sock_send_recv = function(skt, data, recv_callback)
+  local ok = sock_send(skt, msg)
+  if not ok then
+    return nil
+  end
+
+  local rv = sock_recv(skt)
+  if rv and recv_callback then
+    recv_callback(rv)
+  end
+
+  return rv
+end
+
+require 'spec_client'
+
+------------------------------------------
+
+term = { 'END', 'OK', 'STORED', 'ERROR' }
 for i, v in ipairs(term) do
   term[v] = true
 end
@@ -12,23 +51,35 @@ function read_end(c)
   local r = {}
   repeat
     local x, err = c:receive()
+    p("received", x, err)
     table.insert(r, x)
-  until err ~= nil or term[r[#r]]
+  until err or term[r[#r]]
   return r
 end
 
-function printa(a)
-  for i, v in ipairs(a) do
-    print(i, v)
-  end
-end
+------------------------------------------
 
-host, port, c = connect('127.0.0.1:11211')
+location = arg[1] or '127.0.0.1:11211'
+
+host, port, c = connect(location)
+c:settimeout(nil)
+
+------------------------------------------
+
+p("connected", host, port, c)
+
+c:send("flush_all\r\n")
 
 c:send("get a\r\n")
-printa(read_end(c))
+pa(read_end(c))
 
 c:send("set a 0 0 5\r\n")
 c:send("hello\r\n")
-printa(read_end(c))
 
+p("sent set")
+
+pa(read_end(c))
+
+spec_client.get(nil, c, "get", p, {"a", "x"})
+
+p("done!")

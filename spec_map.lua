@@ -50,6 +50,13 @@ spec_map = {
       return true
     end,
 
+  flush_all =
+    function(map_data, sess_addr, skt, cmdline, cmd, itr)
+      map_data = {}
+      asock.send(sess_addr, skt, "OK\r\n")
+      return true
+    end,
+
   quit =
     function(map_data, sess_addr, skt, cmdline, cmd, itr)
       return false

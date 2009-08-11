@@ -9,13 +9,13 @@ function sock_send(skt, data, from, to)
   return asock.send(apo.self_address(), skt, data, from, to)
 end
 
-function send_recv(self_addr, conn, msg, recv_callback)
-  local ok = asock.send(self_addr, conn, msg)
+function send_recv(self_addr, skt, msg, recv_callback)
+  local ok = asock.send(self_addr, skt, msg)
   if not ok then
     return nil
   end
 
-  local rv = asock.recv(self_addr, conn)
+  local rv = asock.recv(self_addr, skt)
   if rv and recv_callback then
     recv_callback(rv)
   end
@@ -71,8 +71,8 @@ end
 --   c1, c2, c3 = close(c1, c2, c3)
 --
 local function close(...)
-  for i, conn in ipairs(arg) do
-    conn:close()
+  for i, skt in ipairs(arg) do
+    skt:close()
   end
   return nil
 end
