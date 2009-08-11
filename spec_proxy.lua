@@ -1,11 +1,11 @@
 spec_proxy = {
   get =
-    function(pool, sess_addr, skt, cmd, itr)
+    function(pool, sess_addr, skt, itr)
       local groups = group_by(itr, pool.choose)
 
       local n = 0
       for downstream_addr, keys in pairs(groups) do
-        apo.send(downstream_addr, sess_addr, skt, cmd, keys)
+        apo.send(downstream_addr, sess_addr, skt, "get", keys)
         n = n + 1
       end
 
@@ -18,7 +18,7 @@ spec_proxy = {
     end,
 
   set =
-    function(pool, sess_addr, skt, cmd, itr)
+    function(pool, sess_addr, skt, itr)
       local key  = itr()
       local flgs = itr()
       local expt = itr()
@@ -32,7 +32,7 @@ spec_proxy = {
           if data then
             local downstream_addr = pool.choose(key)
             if downstream_addr then
-              apo.send(downstream_addr, sess_addr, skt, cmd, {key},
+              apo.send(downstream_addr, sess_addr, skt, "set", {key},
                        string.sub(data, 1, -3))
               apo.recv()
               return true
@@ -46,12 +46,12 @@ spec_proxy = {
     end,
 
   delete =
-    function(pool, sess_addr, skt, cmd, itr)
+    function(pool, sess_addr, skt, itr)
       local key = itr()
       if key then
         local downstream_addr = pool.choose(key)
         if downstream_addr then
-          apo.send(downstream_addr, sess_addr, skt, cmd, {key})
+          apo.send(downstream_addr, sess_addr, skt, "delete", {key})
           apo.recv()
           return true
         end
@@ -62,11 +62,11 @@ spec_proxy = {
     end,
 
   flush_all =
-    function(pool, sess_addr, skt, cmd, itr)
+    function(pool, sess_addr, skt, itr)
       local n = 0
       pool.each(
         function(downstream_addr)
-          apo.send(downstream_addr, sess_addr, skt, cmd, {key})
+          apo.send(downstream_addr, sess_addr, skt, "flush_all", {key})
           n = n + 1
         end)
 
@@ -79,7 +79,7 @@ spec_proxy = {
     end,
 
   quit =
-    function(pool, sess_addr, skt, cmd, itr)
+    function(pool, sess_addr, skt, itr)
       return false
     end
 }

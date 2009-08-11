@@ -1,6 +1,6 @@
 spec_map = {
   get =
-    function(map_data, sess_addr, skt, cmd, itr)
+    function(map_data, sess_addr, skt, itr)
       for key in itr do
         data = map_data[key]
         if data then
@@ -13,7 +13,7 @@ spec_map = {
     end,
 
   set =
-    function(map_data, sess_addr, skt, cmd, itr)
+    function(map_data, sess_addr, skt, itr)
       local key  = itr()
       local flgs = itr()
       local expt = itr()
@@ -35,7 +35,7 @@ spec_map = {
     end,
 
   delete =
-    function(map_data, sess_addr, skt, cmd, itr)
+    function(map_data, sess_addr, skt, itr)
       local key = itr()
       if key then
         if map_data[key] then
@@ -51,14 +51,14 @@ spec_map = {
     end,
 
   flush_all =
-    function(map_data, sess_addr, skt, cmd, itr)
+    function(map_data, sess_addr, skt, itr)
       map_data = {}
       asock.send(sess_addr, skt, "OK\r\n")
       return true
     end,
 
   quit =
-    function(map_data, sess_addr, skt, cmd, itr)
+    function(map_data, sess_addr, skt, itr)
       return false
     end
 }

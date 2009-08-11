@@ -25,7 +25,7 @@ function upstream_session(self_addr, upstream_skt, specs, go_data)
       if cmd then
         local spec = specs[cmd]
         if spec then
-          if not spec(go_data, self_addr, upstream_skt, cmd, itr) then
+          if not spec(go_data, self_addr, upstream_skt, itr) then
             cmdline = nil
           end
         else
