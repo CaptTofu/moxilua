@@ -1,5 +1,5 @@
 local function send_recv(self_addr, conn, msg, value_callback)
-  local ok = asock.send(self_addr, conn, msg, value_callback)
+  local ok = asock.send(self_addr, conn, msg)
   if not ok then
     return nil
   end
@@ -58,7 +58,7 @@ spec_client = {
 
   delete =
     function(self_addr, conn, cmd, value_callback, keys)
-      return send_recv(self_addr, conn, value_callback,
+      return send_recv(self_addr, conn,
                        "delete " .. keys[1] .. "\r\n",
                        value_callback)
     end

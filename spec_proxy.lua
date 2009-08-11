@@ -23,18 +23,25 @@ spec_proxy = {
       local flgs = itr()
       local expt = itr()
       local size = itr()
+
       if key and flgs and expt and size then
         size = tonumber(size)
         if size >= 0 then
-          local data = skt:receive(tonumber(size) + 2)
+          local data = asock.recv(sess_addr, skt,
+                                  tonumber(size) + 2)
           if data then
-            pool[key] = data
-            skt:send("OK\r\n")
-            return true
+            local downstream_addr = pool.choose(key)
+            if downstream_addr then
+              apo.send(downstream_addr, sess_addr, skt, cmd, {key},
+                       string.sub(data, 1, -3))
+              apo.recv()
+              return true
+            end
           end
         end
       end
-      skt:send("ERROR\r\n")
+
+      asock.send(sess_addr, skt, "ERROR\r\n")
       return true
     end,
 
@@ -42,15 +49,15 @@ spec_proxy = {
     function(pool, sess_addr, skt, cmdline, cmd, itr)
       local key = itr()
       if key then
-        if pool[key] then
-           pool[key] = nil
-          skt:send("DELETED\r\n")
-        else
-          skt:send("NOT_FOUND\r\n")
+        local downstream_addr = pool.choose(key)
+        if downstream_addr then
+          apo.send(downstream_addr, sess_addr, skt, cmd, {key})
+          apo.recv()
+          return true
         end
-      else
-        skt:send("ERROR\r\n")
       end
+
+      asock.send(sess_addr, skt, "ERROR\r\n")
       return true
     end,
 
