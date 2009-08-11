@@ -5,7 +5,8 @@ spec_proxy = {
 
       local n = 0
       for downstream_addr, keys in pairs(groups) do
-        apo.send(downstream_addr, sess_addr, skt, "get", keys)
+        apo.send(downstream_addr, apo.self_address(),
+                 skt, "get", keys)
         n = n + 1
       end
 
@@ -13,8 +14,7 @@ spec_proxy = {
         apo.recv()
       end
 
-      asock.send(sess_addr, skt, "END\r\n")
-      return true
+      return sock_send(skt, "END\r\n") ~= nil
     end,
 
   set =
@@ -27,12 +27,12 @@ spec_proxy = {
       if key and flgs and expt and size then
         size = tonumber(size)
         if size >= 0 then
-          local data = asock.recv(sess_addr, skt,
-                                  tonumber(size) + 2)
+          local data = sock_recv(skt, tonumber(size) + 2)
           if data then
             local downstream_addr = pool.choose(key)
             if downstream_addr then
-              apo.send(downstream_addr, sess_addr, skt, "set", {key},
+              apo.send(downstream_addr, apo.self_address(),
+                       skt, "set", {key},
                        string.sub(data, 1, -3))
               apo.recv()
               return true
@@ -41,8 +41,7 @@ spec_proxy = {
         end
       end
 
-      asock.send(sess_addr, skt, "ERROR\r\n")
-      return true
+      return sock_send(skt, "ERROR\r\n") ~= nil
     end,
 
   delete =
@@ -51,14 +50,14 @@ spec_proxy = {
       if key then
         local downstream_addr = pool.choose(key)
         if downstream_addr then
-          apo.send(downstream_addr, sess_addr, skt, "delete", {key})
+          apo.send(downstream_addr, apo.self_address(),
+                   skt, "delete", {key})
           apo.recv()
           return true
         end
       end
 
-      asock.send(sess_addr, skt, "ERROR\r\n")
-      return true
+      return sock_send(skt, "ERROR\r\n") ~= nil
     end,
 
   flush_all =
@@ -66,7 +65,8 @@ spec_proxy = {
       local n = 0
       pool.each(
         function(downstream_addr)
-          apo.send(downstream_addr, sess_addr, skt, "flush_all", {key})
+          apo.send(downstream_addr, apo.self_address(),
+                   skt, "flush_all", {key})
           n = n + 1
         end)
 
@@ -74,8 +74,7 @@ spec_proxy = {
         apo.recv()
       end
 
-      asock.send(sess_addr, skt, "OK\r\n")
-      return true
+      return sock_send(skt, "OK\r\n") ~= nil
     end,
 
   quit =
