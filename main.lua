@@ -7,8 +7,9 @@ require('util')
 
 require('spec_map')
 require('spec_client')
-require('spec_proxy_upstream')
-require('spec_proxy_downstream')
+require('spec_proxy')
+
+require('downstream')
 
 print("start")
 
