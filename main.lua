@@ -6,7 +6,9 @@ asock = require('actor_socket')
 require('util')
 
 require('spec_map')
-require('spec_proxy')
+require('spec_client')
+require('spec_proxy_upstream')
+require('spec_proxy_downstream')
 
 print("start")
 
@@ -22,8 +24,8 @@ function upstream_session(self_addr, upstream_skt, specs, go_data)
       if cmd then
         local spec = specs[cmd]
         if spec then
-          if not spec.go(go_data, self_addr, upstream_skt,
-                         cmdline, cmd, itr) then
+          if not spec(go_data, self_addr, upstream_skt,
+                      cmdline, cmd, itr) then
             cmdline = nil
           end
         else
@@ -53,7 +55,8 @@ apo.spawn(upstream_accept, server,
 
 server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
-          spec_proxy, create_pool({"127.0.0.1:11311"}))
+          spec_proxy_upstream,
+          create_downstream_pool({ "127.0.0.1:11311" }))
 
 print("loop")
 

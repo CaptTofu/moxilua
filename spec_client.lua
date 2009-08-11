@@ -1,19 +1,33 @@
-spec_proxy_upstream = {
+spec_client = {
   get =
-    function(pool, sess_addr, skt, cmdline, cmd, itr)
-      local groups = group_by(itr, pool.choose)
+    function(self_addr, conn, cmd, keys, value_callback)
+      local head
+      local body
+      local line = "get " .. array_join(keys) .. "\r\n"
 
-      local n = 0
-      for downstream_addr, keys in pairs(groups) do
-        apo.send(downstream_addr, sess_addr, skt, cmd, keys)
-        n = n + 1
+      local ok = asock.send(self_addr, conn, line)
+      if not ok then
+        return false
       end
 
-      for i = 1, n do
-        apo.recv()
-      end
+      repeat
+        head = asock.recv(self_addr, conn)
+        if head and head ~= "END" then
+          if string.find(head, "^VALUE ") then
+            body = asock.recv(self_addr, conn)
+            if body then
+              value_callback(head, body)
+            else
+              return false
+            end
+          else
+            value_callback(head, nil)
+          end
+        else
+          return false
+        end
+      until head == "END"
 
-      asock.send(sess_addr, skt, "END\r\n")
       return true
     end,
 
@@ -43,7 +57,7 @@ spec_proxy_upstream = {
       local key = itr()
       if key then
         if pool[key] then
-           pool[key] = nil
+          pool[key] = nil
           skt:send("DELETED\r\n")
         else
           skt:send("NOT_FOUND\r\n")
@@ -52,11 +66,6 @@ spec_proxy_upstream = {
         skt:send("ERROR\r\n")
       end
       return true
-    end,
-
-  quit =
-    function(pool, sess_addr, skt, cmdline, cmd, itr)
-      return false
     end
 }
 
