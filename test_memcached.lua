@@ -25,7 +25,7 @@ sock_send = function(skt, data, from, to)
 end
 
 sock_send_recv = function(skt, data, recv_callback)
-  local ok = sock_send(skt, msg)
+  local ok = sock_send(skt, data)
   if not ok then
     return nil
   end
@@ -68,8 +68,10 @@ c:settimeout(nil)
 
 p("connected", host, port, c)
 
-c:send("flush_all\r\n")
-pa(read_end(c))
+client_ascii.flush_all(c, p)
+
+-- c:send("flush_all\r\n")
+-- pa(read_end(c))
 
 c:send("get a\r\n")
 pa(read_end(c))
