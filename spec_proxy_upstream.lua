@@ -1,4 +1,4 @@
-spec_proxy_upstream = {
+spec_proxy = {
   get =
     function(pool, sess_addr, skt, cmdline, cmd, itr)
       local groups = group_by(itr, pool.choose)
