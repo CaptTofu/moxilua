@@ -9,7 +9,7 @@ require('client_ascii')
 require('server_ascii_dict')
 require('server_ascii_proxy')
 
-require('downstream')
+require('pool')
 
 print("start")
 
