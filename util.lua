@@ -1,3 +1,34 @@
+recv = apo.recv
+send = apo.send
+
+function sock_recv(skt, pattern)
+  return asock.recv(apo.self_address(), skt, pattern)
+end
+
+function sock_send(skt, data, from, to)
+  return asock.send(apo.self_address(), skt, data, from, to)
+end
+
+function send_recv(self_addr, conn, msg, recv_callback)
+  local ok = asock.send(self_addr, conn, msg)
+  if not ok then
+    return nil
+  end
+
+  local rv = asock.recv(self_addr, conn)
+  if rv and recv_callback then
+    recv_callback(rv)
+  end
+
+  return rv
+end
+
+function sock_send_recv(skt, data, recv_callback)
+  return send_recv(apo.self_address(), skt, data, recv_callback)
+end
+
+----------------------------------------
+
 -- Parses "host:port" string.
 --
 function host_port(str, default_port)

@@ -11,26 +11,26 @@ spec_client = {
       end
 
       repeat
-        head = sock_recv(conn)
-        if head then
-          if head ~= "END" then
-            if string.find(head, "^VALUE ") then
-              body = sock_recv(conn)
-              if body then
-                value_callback(head, body)
-              else
-                return false
-              end
+        line = sock_recv(conn)
+        if line then
+          if line == "END" then
+            return true
+          end
+
+          if string.find(line, "^VALUE ") then
+            body = sock_recv(conn)
+            if body then
+              value_callback(line, body)
             else
-              value_callback(head, nil)
+              return false
             end
+          else
+            value_callback(line, nil)
           end
         else
           return false
         end
-      until head == "END"
-
-      return true
+      until false
     end,
 
   set =
