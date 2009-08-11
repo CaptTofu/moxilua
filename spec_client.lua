@@ -28,16 +28,18 @@ spec_client = {
 
       repeat
         head = asock.recv(self_addr, conn)
-        if head and head ~= "END" then
-          if string.find(head, "^VALUE ") then
-            body = asock.recv(self_addr, conn)
-            if body then
-              value_callback(head, body)
+        if head then
+          if head ~= "END" then
+            if string.find(head, "^VALUE ") then
+              body = asock.recv(self_addr, conn)
+              if body then
+                value_callback(head, body)
+              else
+                return false
+              end
             else
-              return false
+              value_callback(head, nil)
             end
-          else
-            value_callback(head, nil)
           end
         else
           return false
