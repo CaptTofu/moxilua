@@ -68,6 +68,21 @@ local function register(coro)
   return curr_addr
 end
 
+local function is_registered(addr)
+  return map_addr_to_coro[addr] ~= nil
+end
+
+local function coroutine_address(coro)
+  if coro then
+    return map_coro_to_addr[coro]
+  end
+  return nil
+end
+
+local function self_address()
+  return coroutine_address(coroutine.running())
+end
+
 ----------------------------------------
 
 local function resume(coro, ...)
@@ -184,8 +199,10 @@ return {
   spawn_with = spawn_with,
   register   = register,
   unregister = unregister,
-  loop             = loop,
-  loop_until_empty = loop_until_empty
+  is_registered     = is_registered,
+  coroutine_address = coroutine_address,
+  self_address      = self_address,
+  loop_until_empty  = loop_until_empty
 }
 
 end

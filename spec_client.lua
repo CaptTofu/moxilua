@@ -5,17 +5,17 @@ spec_client = {
       local body
       local line = "get " .. array_join(keys) .. "\r\n"
 
-      local ok = asock.send(self_addr, conn, line)
+      local ok = sock_send(conn, line)
       if not ok then
         return false
       end
 
       repeat
-        head = asock.recv(self_addr, conn)
+        head = sock_recv(conn)
         if head then
           if head ~= "END" then
             if string.find(head, "^VALUE ") then
-              body = asock.recv(self_addr, conn)
+              body = sock_recv(conn)
               if body then
                 value_callback(head, body)
               else
@@ -35,16 +35,16 @@ spec_client = {
 
   set =
     function(self_addr, conn, cmd, value_callback, args, value)
-      return asock.send_recv(self_addr, conn,
-                             "set " .. args[1] ..
-                             " 0 0 " .. string.len(value) .. "\r\n" ..
-                             value .. "\r\n",
-                             value_callback)
+      return sock_send_recv(conn,
+                            "set " .. args[1] ..
+                            " 0 0 " .. string.len(value) .. "\r\n" ..
+                            value .. "\r\n",
+                            value_callback)
     end,
 
   delete =
     function(self_addr, conn, cmd, value_callback, args)
-      return asock.send_recv(self_addr, conn,
+      return sock_send_recv(conn,
                              "delete " .. args[1] .. "\r\n",
                              value_callback)
     end

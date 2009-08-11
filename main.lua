@@ -15,6 +15,23 @@ print("start")
 
 ----------------------------------------
 
+recv = apo.recv
+send = apo.send
+
+function sock_recv(skt, pattern)
+  return asock.recv(apo.self_address(), skt, pattern)
+end
+
+function sock_send(skt, data, from, to)
+  return asock.send(apo.self_address(), skt, data, from, to)
+end
+
+function sock_send_recv(skt, data, recv_callback)
+  return asock.send_recv(apo.self_address(), skt, data, recv_callback)
+end
+
+----------------------------------------
+
 function upstream_session(self_addr, upstream_skt, specs, go_data)
   local cmdline = true
   while cmdline do
