@@ -25,7 +25,7 @@ spec_map = {
                                   tonumber(size) + 2)
           if data then
             map_data[key] = data
-            asock.send(sess_addr, skt, "OK\r\n")
+            asock.send(sess_addr, skt, "STORED\r\n")
             return true
           end
         end

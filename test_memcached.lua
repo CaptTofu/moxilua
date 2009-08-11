@@ -69,6 +69,7 @@ c:settimeout(nil)
 p("connected", host, port, c)
 
 c:send("flush_all\r\n")
+pa(read_end(c))
 
 c:send("get a\r\n")
 pa(read_end(c))
