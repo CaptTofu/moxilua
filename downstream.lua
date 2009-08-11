@@ -37,7 +37,7 @@ end
 
 ------------------------------------------
 
-function create_downstream_pool(locations)
+function create_pool(locations)
   local downstream_addrs = {}
 
   local function done_func(downstream_addr)

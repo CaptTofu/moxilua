@@ -5,9 +5,9 @@ asock = require('actor_socket')
 
 require('util')
 
-require('spec_map')
-require('spec_client')
-require('spec_proxy')
+require('client_ascii')
+require('server_ascii_dict')
+require('server_ascii_proxy')
 
 require('downstream')
 
@@ -56,7 +56,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
           server_ascii_proxy,
-          create_downstream_pool({ "127.0.0.1:11311" }))
+          create_pool({ "127.0.0.1:11311" }))
 
 print("loop")
 

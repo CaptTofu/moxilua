@@ -1,4 +1,4 @@
-socket = require 'socket'
+socket = require('socket')
 apo    = require('actor_post_office')
 asock  = require('actor_socket')
 
@@ -38,7 +38,7 @@ sock_send_recv = function(skt, data, recv_callback)
   return rv
 end
 
-require 'spec_client'
+require('client_ascii')
 
 ------------------------------------------
 
