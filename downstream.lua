@@ -7,7 +7,7 @@ local function spawn_downstream(location, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, keys = apo.recv()
+        local sess_addr, uconn, cmd, keys, value = apo.recv()
 
         local ok = true
 
@@ -21,7 +21,7 @@ local function spawn_downstream(location, done_func)
 
         local spec = spec_client[cmd]
         if spec then
-          if not spec(self_addr, dconn, cmd, keys, value_callback) then
+          if not spec(self_addr, dconn, cmd, value_callback, keys, value) then
             dconn:close()
             dconn = nil
           end

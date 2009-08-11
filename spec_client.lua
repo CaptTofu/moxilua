@@ -1,6 +1,22 @@
+local function send_recv(self_addr, conn, msg, value_callback)
+  local ok = asock.send(self_addr, conn, msg, value_callback)
+  if not ok then
+    return nil
+  end
+
+  local rv = asock.recv(self_addr, conn)
+  if rv then
+    value_callback(rv)
+  end
+
+  return rv
+end
+
+--------------------------------------------------------
+
 spec_client = {
   get =
-    function(self_addr, conn, cmd, keys, value_callback)
+    function(self_addr, conn, cmd, value_callback, keys)
       local head
       local body
       local line = "get " .. array_join(keys) .. "\r\n"
@@ -32,40 +48,19 @@ spec_client = {
     end,
 
   set =
-    function(pool, sess_addr, skt, cmdline, cmd, itr)
-      local key  = itr()
-      local flgs = itr()
-      local expt = itr()
-      local size = itr()
-      if key and flgs and expt and size then
-        size = tonumber(size)
-        if size >= 0 then
-          local data = skt:receive(tonumber(size) + 2)
-          if data then
-            pool[key] = data
-            skt:send("OK\r\n")
-            return true
-          end
-        end
-      end
-      skt:send("ERROR\r\n")
-      return true
+    function(self_addr, conn, cmd, value_callback, keys, value)
+      return send_recv(self_addr, conn,
+                       "set " .. keys[1] ..
+                       " 0 0 " .. string.len(value) .. "\r\n" ..
+                       value .. "\r\n",
+                       value_callback)
     end,
 
   delete =
-    function(pool, sess_addr, skt, cmdline, cmd, itr)
-      local key = itr()
-      if key then
-        if pool[key] then
-          pool[key] = nil
-          skt:send("DELETED\r\n")
-        else
-          skt:send("NOT_FOUND\r\n")
-        end
-      else
-        skt:send("ERROR\r\n")
-      end
-      return true
+    function(self_addr, conn, cmd, value_callback, keys)
+      return send_recv(self_addr, conn, value_callback,
+                       "delete " .. keys[1] .. "\r\n",
+                       value_callback)
     end
 }
 
