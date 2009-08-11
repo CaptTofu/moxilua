@@ -1,13 +1,13 @@
 -- Here, dconn means downstream connection,
 -- and, uconn means upstream connection.
 --
-local function spawn_downstream(location, done_func)
+local function spawn_downstream(location, done_func, client)
   local host, port, dconn, err = connect(location)
 
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, keys, value = apo.recv()
+        local sess_addr, uconn, cmd, args, value = apo.recv()
 
         local ok = true
 
@@ -19,9 +19,9 @@ local function spawn_downstream(location, done_func)
                 asock.send(self_addr, uconn, body .. "\r\n"))
         end
 
-        local spec = client_ascii[cmd]
-        if spec then
-          if not spec(dconn, value_callback, keys, value) then
+        local handler = client[cmd]
+        if handler then
+          if not handler(dconn, value_callback, args, value) then
             dconn:close()
             dconn = nil
           end
@@ -51,7 +51,7 @@ function create_downstream_pool(locations)
   local function find_downstream(i)
     local x = downstream_addrs[i]
     if not x then
-      x = spawn_downstream(locations[i], done_func)
+      x = spawn_downstream(locations[i], done_func, client_ascii)
       downstream_addrs[i] = x
     end
     return x

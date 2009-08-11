@@ -1,4 +1,4 @@
-server_dict = {
+server_ascii_dict = {
   get =
     function(dict, skt, itr)
       for key in itr do

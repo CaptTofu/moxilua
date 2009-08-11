@@ -1,4 +1,4 @@
-server_proxy = {
+server_ascii_proxy = {
   get =
     function(pool, skt, itr)
       local groups = group_by(itr, pool.choose)
