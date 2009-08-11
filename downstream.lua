@@ -19,7 +19,7 @@ local function spawn_downstream(location, done_func)
                 asock.send(self_addr, uconn, body .. "\r\n"))
         end
 
-        local spec = spec_client[cmd]
+        local spec = client_ascii[cmd]
         if spec then
           if not spec(dconn, value_callback, keys, value) then
             dconn:close()

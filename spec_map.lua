@@ -1,8 +1,8 @@
-spec_map = {
+server_dict = {
   get =
-    function(map_data, skt, itr)
+    function(dict, skt, itr)
       for key in itr do
-        data = map_data[key]
+        data = dict[key]
         if data then
           if not sock_send(skt, "VALUE " .. key .. "\r\n" .. data) then
             return false
@@ -13,7 +13,7 @@ spec_map = {
     end,
 
   set =
-    function(map_data, skt, itr)
+    function(dict, skt, itr)
       local key  = itr()
       local flgs = itr()
       local expt = itr()
@@ -24,7 +24,7 @@ spec_map = {
         if size >= 0 then
           local data = sock_recv(skt, tonumber(size) + 2)
           if data then
-            map_data[key] = data
+            dict[key] = data
             return sock_send(skt, "STORED\r\n") ~= nil
           else
             return false
@@ -35,11 +35,11 @@ spec_map = {
     end,
 
   delete =
-    function(map_data, skt, itr)
+    function(dict, skt, itr)
       local key = itr()
       if key then
-        if map_data[key] then
-          map_data[key] = nil
+        if dict[key] then
+          dict[key] = nil
           return sock_send(skt, "DELETED\r\n") ~= nil
         else
           return sock_send(skt, "NOT_FOUND\r\n") ~= nil
@@ -49,13 +49,13 @@ spec_map = {
     end,
 
   flush_all =
-    function(map_data, skt, itr)
-      map_data = {}
+    function(dict, skt, itr)
+      dict = {}
       return sock_send(skt, "OK\r\n") ~= nil
     end,
 
   quit =
-    function(map_data, skt, itr)
+    function(dict, skt, itr)
       return false
     end
 }
