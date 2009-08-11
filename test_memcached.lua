@@ -59,6 +59,14 @@ end
 
 ------------------------------------------
 
+got_last = nil
+
+function got(...)
+  got_last = arg
+end
+
+------------------------------------------
+
 location = arg[1] or '127.0.0.1:11211'
 
 host, port, c = connect(location)
@@ -68,10 +76,15 @@ c:settimeout(nil)
 
 p("connected", host, port, c)
 
-client_ascii.flush_all(c, p)
+got_last = {}
+assert(client_ascii.flush_all(c, got))
+assert(got_last[1] == "OK")
 
--- c:send("flush_all\r\n")
--- pa(read_end(c))
+got_last = {}
+assert(client_ascii.get(c, got, {"a"}))
+p("hi")
+pa(got_last)
+p("bye")
 
 c:send("get a\r\n")
 pa(read_end(c))

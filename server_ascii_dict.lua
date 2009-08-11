@@ -2,7 +2,7 @@ server_ascii_dict = {
   get =
     function(dict, skt, itr)
       for key in itr do
-        data = dict[key]
+        data = dict.tbl[key]
         if data then
           if not sock_send(skt, "VALUE " .. key .. "\r\n" .. data) then
             return false
@@ -24,7 +24,7 @@ server_ascii_dict = {
         if size >= 0 then
           local data = sock_recv(skt, tonumber(size) + 2)
           if data then
-            dict[key] = data
+            dict.tbl[key] = data
             return sock_send(skt, "STORED\r\n") ~= nil
           else
             return false
@@ -38,8 +38,8 @@ server_ascii_dict = {
     function(dict, skt, itr)
       local key = itr()
       if key then
-        if dict[key] then
-          dict[key] = nil
+        if dict.tbl[key] then
+          dict.tbl[key] = nil
           return sock_send(skt, "DELETED\r\n") ~= nil
         else
           return sock_send(skt, "NOT_FOUND\r\n") ~= nil
@@ -50,7 +50,7 @@ server_ascii_dict = {
 
   flush_all =
     function(dict, skt, itr)
-      dict = {}
+      dict.tbl = {}
       return sock_send(skt, "OK\r\n") ~= nil
     end,
 
