@@ -21,7 +21,7 @@ local function spawn_downstream(location, done_func)
 
         local spec = spec_client[cmd]
         if spec then
-          if not spec(self_addr, dconn, cmd, value_callback, keys, value) then
+          if not spec(self_addr, dconn, value_callback, keys, value) then
             dconn:close()
             dconn = nil
           end
