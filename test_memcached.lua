@@ -69,6 +69,16 @@ function got(...)
   pa(arg)
 end
 
+function expected(...)
+  assert(#got_last == #arg)
+  for i = 1, #arg do
+    if not string.find(got_last[i], "^" .. arg[i]) then
+      p("expected", arg[i], "got", got_last[i])
+      assert(false)
+    end
+  end
+end
+
 ------------------------------------------
 
 location = arg[1] or '127.0.0.1:11211'
@@ -82,20 +92,19 @@ p("connected", host, port, c)
 
 fresh()
 assert(client_ascii.flush_all(c, got))
-assert(got_last[1] == "OK")
+expected("OK")
 
 fresh()
 assert(client_ascii.get(c, got, {"a"}))
-assert(#got_last == 0)
+expected()
 
 fresh()
 assert(client_ascii.set(c, got, {"a", "0", "0", "5"}, "hello"))
-assert(got_last[1] == "STORED")
+expected("STORED")
 
 fresh()
 assert(client_ascii.get(c, got, {"a"}))
-assert(string.find(got_last[1], "^VALUE a"))
-assert(got_last[2] == "hello")
-assert(#got_last == 2)
+expected("VALUE a",
+         "hello")
 
 p("done!")
