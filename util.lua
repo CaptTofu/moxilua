@@ -110,26 +110,6 @@ function array_iter(arr, start, step)
          end
 end
 
--- Returns a string of array elements joined with a
--- separator string (defaults to " ").  An optional
--- fun parameter is a function to call on each array item.
---
-function array_join(a, sep, fun)
-  if a and #a > 0 then
-    fun = fun or tostring
-    sep = sep or " "
-
-    local r = fun(a[1])
-    for i = 2, #a do
-      r = r .. sep .. fun(a[i])
-    end
-
-    return r
-  end
-
-  return ""
-end
-
 ------------------------------------------------------
 
 function TEST_host_port()
@@ -156,13 +136,3 @@ function TEST_group_by()
   end
 end
 
-function TEST_array_join()
-  print(array_join({1,2,3}))
-  assert(array_join({1,2,3}) == "1 2 3")
-
-  print(array_join({1}))
-  assert(array_join({1}) == "1")
-
-  print(array_join({}))
-  assert(array_join({}) == "")
-end

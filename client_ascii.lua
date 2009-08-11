@@ -3,7 +3,7 @@ client_ascii = {
     function(conn, value_callback, keys)
       local head
       local body
-      local line = "get " .. array_join(keys) .. "\r\n"
+      local line = "get " .. table.concat(keys, ' ') .. "\r\n"
 
       local ok = sock_send(conn, line)
       if not ok then
