@@ -1,6 +1,6 @@
 spec_client = {
   get =
-    function(self_addr, conn, value_callback, keys)
+    function(conn, value_callback, keys)
       local head
       local body
       local line = "get " .. array_join(keys) .. "\r\n"
@@ -20,12 +20,16 @@ spec_client = {
           if string.find(line, "^VALUE ") then
             body = sock_recv(conn)
             if body then
-              value_callback(line, body)
+              if value_callback then
+                value_callback(line, body)
+              end
             else
               return false
             end
           else
-            value_callback(line, nil)
+            if value_callback then
+              value_callback(line, nil)
+            end
           end
         else
           return false
@@ -34,7 +38,7 @@ spec_client = {
     end,
 
   set =
-    function(self_addr, conn, value_callback, args, value)
+    function(conn, value_callback, args, value)
       return sock_send_recv(conn,
                             "set " .. args[1] ..
                             " 0 0 " .. string.len(value) .. "\r\n" ..
@@ -43,14 +47,14 @@ spec_client = {
     end,
 
   delete =
-    function(self_addr, conn, value_callback, args)
+    function(conn, value_callback, args)
       return sock_send_recv(conn,
                             "delete " .. args[1] .. "\r\n",
                             value_callback)
     end,
 
   flush_all =
-    function(self_addr, conn, value_callback, args)
+    function(conn, value_callback, args)
       return sock_send_recv(conn,
                             "flush_all\r\n",
                             value_callback)

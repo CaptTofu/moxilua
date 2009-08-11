@@ -81,6 +81,6 @@ p("sent set")
 
 pa(read_end(c))
 
-spec_client.get(nil, c, p, {"a", "x"})
+spec_client.get(c, p, {"a", "x"})
 
 p("done!")
