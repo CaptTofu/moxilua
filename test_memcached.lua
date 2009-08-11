@@ -59,7 +59,10 @@ end
 
 ------------------------------------------
 
-got_last = nil
+got_last = {}
+function fresh()
+  got_last = {}
+end
 
 function got(...)
   got_last = arg
@@ -77,11 +80,11 @@ c:settimeout(nil)
 
 p("connected", host, port, c)
 
-got_last = {}
+fresh()
 assert(client_ascii.flush_all(c, got))
 assert(got_last[1] == "OK")
 
-got_last = {}
+fresh()
 assert(client_ascii.get(c, got, {"a"}))
 pa(got_last)
 assert(#got_last == 0)
