@@ -63,6 +63,7 @@ got_last = nil
 
 function got(...)
   got_last = arg
+  pa(arg)
 end
 
 ------------------------------------------
@@ -82,12 +83,8 @@ assert(got_last[1] == "OK")
 
 got_last = {}
 assert(client_ascii.get(c, got, {"a"}))
-p("hi")
 pa(got_last)
-p("bye")
-
-c:send("get a\r\n")
-pa(read_end(c))
+assert(#got_last == 0)
 
 c:send("set a 0 0 5\r\n")
 c:send("hello\r\n")

@@ -66,7 +66,7 @@ server_ascii_proxy = {
       pool.each(
         function(downstream_addr)
           apo.send(downstream_addr, apo.self_address(),
-                   skt, "flush_all", {key})
+                   nil, "flush_all", {key})
           n = n + 1
         end)
 

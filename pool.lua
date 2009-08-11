@@ -12,11 +12,15 @@ local function spawn_downstream(location, done_func, client)
         local ok = true
 
         local function value_callback(head, body)
-          ok = ok and
-               (head and
-                asock.send(self_addr, uconn, head .. "\r\n")) and
-               ((not body) or
-                asock.send(self_addr, uconn, body .. "\r\n"))
+          if uconn then
+            ok = ok and
+                 (head and
+                  asock.send(self_addr, uconn, head .. "\r\n")) and
+                 ((not body) or
+                  asock.send(self_addr, uconn, body .. "\r\n"))
+          else
+            ok = ok and head
+          end
         end
 
         local handler = client[cmd]
