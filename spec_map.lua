@@ -1,6 +1,6 @@
 spec_map = {
   get =
-    function(map_data, sess_addr, skt, itr)
+    function(map_data, skt, itr)
       for key in itr do
         data = map_data[key]
         if data then
@@ -13,7 +13,7 @@ spec_map = {
     end,
 
   set =
-    function(map_data, sess_addr, skt, itr)
+    function(map_data, skt, itr)
       local key  = itr()
       local flgs = itr()
       local expt = itr()
@@ -35,7 +35,7 @@ spec_map = {
     end,
 
   delete =
-    function(map_data, sess_addr, skt, itr)
+    function(map_data, skt, itr)
       local key = itr()
       if key then
         if map_data[key] then
@@ -49,13 +49,13 @@ spec_map = {
     end,
 
   flush_all =
-    function(map_data, sess_addr, skt, itr)
+    function(map_data, skt, itr)
       map_data = {}
       return sock_send(skt, "OK\r\n") ~= nil
     end,
 
   quit =
-    function(map_data, sess_addr, skt, itr)
+    function(map_data, skt, itr)
       return false
     end
 }

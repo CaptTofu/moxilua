@@ -1,6 +1,6 @@
 spec_proxy = {
   get =
-    function(pool, sess_addr, skt, itr)
+    function(pool, skt, itr)
       local groups = group_by(itr, pool.choose)
 
       local n = 0
@@ -18,7 +18,7 @@ spec_proxy = {
     end,
 
   set =
-    function(pool, sess_addr, skt, itr)
+    function(pool, skt, itr)
       local key  = itr()
       local flgs = itr()
       local expt = itr()
@@ -45,7 +45,7 @@ spec_proxy = {
     end,
 
   delete =
-    function(pool, sess_addr, skt, itr)
+    function(pool, skt, itr)
       local key = itr()
       if key then
         local downstream_addr = pool.choose(key)
@@ -61,7 +61,7 @@ spec_proxy = {
     end,
 
   flush_all =
-    function(pool, sess_addr, skt, itr)
+    function(pool, skt, itr)
       local n = 0
       pool.each(
         function(downstream_addr)
@@ -78,7 +78,7 @@ spec_proxy = {
     end,
 
   quit =
-    function(pool, sess_addr, skt, itr)
+    function(pool, skt, itr)
       return false
     end
 }
