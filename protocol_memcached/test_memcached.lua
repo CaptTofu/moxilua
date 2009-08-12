@@ -38,7 +38,7 @@ sock_send_recv = function(skt, data, recv_callback)
   return rv
 end
 
-require('client_ascii')
+require('protocol_memcached/client_ascii')
 
 ------------------------------------------
 
