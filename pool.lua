@@ -55,7 +55,7 @@ function create_pool(locations)
   local function find_downstream(i)
     local x = downstream_addrs[i]
     if not x then
-      x = spawn_downstream(locations[i], done_func, client_ascii)
+      x = spawn_downstream(locations[i], done_func, memcached_client_ascii)
       downstream_addrs[i] = x
     end
     return x

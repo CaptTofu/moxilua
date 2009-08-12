@@ -91,19 +91,19 @@ c:settimeout(nil)
 p("connected", host, port, c)
 
 fresh()
-assert(client_ascii.flush_all(c, got))
+assert(memcached_client_ascii.flush_all(c, got))
 expected("OK")
 
 fresh()
-assert(client_ascii.get(c, got, {"a"}))
+assert(memcached_client_ascii.get(c, got, {"a"}))
 expected()
 
 fresh()
-assert(client_ascii.set(c, got, {"a", "0", "0", "5"}, "hello"))
+assert(memcached_client_ascii.set(c, got, {"a", "0", "0", "5"}, "hello"))
 expected("STORED")
 
 fresh()
-assert(client_ascii.get(c, got, {"a"}))
+assert(memcached_client_ascii.get(c, got, {"a"}))
 expected("VALUE a",
          "hello")
 

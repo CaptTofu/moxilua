@@ -1,4 +1,4 @@
-client_ascii = {
+memcached_client_ascii = {
   get =
     function(conn, value_callback, keys)
       local head

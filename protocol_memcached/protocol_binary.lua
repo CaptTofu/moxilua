@@ -4,7 +4,7 @@ local function uint_t(size, name)
   return { name = name, size = n }
 end
 
-protocol_binary = {
+memcached_protocol_binary = {
   magic = {
     REQ = 0x80,
     RES = 0x81

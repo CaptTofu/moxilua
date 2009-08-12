@@ -51,11 +51,11 @@ host = "127.0.0.1"
 
 server = socket.bind(host, 11311)
 apo.spawn(upstream_accept, server,
-          server_ascii_dict, { tbl = {} })
+          memcached_server_ascii_dict, { tbl = {} })
 
 server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
-          server_ascii_proxy,
+          memcached_server_ascii_proxy,
           create_pool({ "127.0.0.1:11311" }))
 
 print("loop")

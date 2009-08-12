@@ -72,6 +72,6 @@ local function uint_t(size, name)
 end
 ]=])
 
-print("protocol_binary = {")
+print("memcached_protocol_binary = {")
 print(body)
 

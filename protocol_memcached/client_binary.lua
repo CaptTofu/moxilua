@@ -1,4 +1,4 @@
-client_binary = {
+memcached_client_binary = {
   get =
     function(conn, value_callback, keys)
       local head
