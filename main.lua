@@ -16,7 +16,7 @@ print("start")
 
 ----------------------------------------
 
-function upstream_session(self_addr, upstream_skt, specs, go_data)
+function upstream_session_ascii(self_addr, upstream_skt, specs, go_data)
   local cmdline = true
   while cmdline do
     cmdline = asock.recv(self_addr, upstream_skt, "*l")
@@ -42,7 +42,7 @@ end
 function upstream_accept(self_addr, server_skt, specs, go_data)
   asock.loop_accept(self_addr, server_skt, function(upstream_skt)
     upstream_skt:settimeout(0)
-    apo.spawn(upstream_session, upstream_skt, specs, go_data)
+    apo.spawn(upstream_session_ascii, upstream_skt, specs, go_data)
   end)
 end
 

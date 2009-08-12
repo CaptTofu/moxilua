@@ -61,3 +61,4 @@ for _, name in ipairs({ 'request', 'response' }) do
   end
   memcached_protocol_binary[name .. '_header_num_bytes'] = sum_bytes
 end
+
