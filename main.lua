@@ -55,7 +55,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11333)
 apo.spawn(upstream_accept, server,
           memcached_server_ascii_proxy,
-          create_pool({ "127.0.0.1:11311" }))
+          memcached_pool({ "127.0.0.1:11311" }))
 
 print("loop")
 

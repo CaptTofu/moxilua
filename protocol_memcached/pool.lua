@@ -41,7 +41,7 @@ end
 
 ------------------------------------------
 
-function create_pool(locations)
+function memcached_pool(locations)
   local downstream_addrs = {}
 
   local function done_func(downstream_addr)
