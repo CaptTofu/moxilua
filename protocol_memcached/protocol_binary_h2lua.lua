@@ -67,8 +67,10 @@ body = string.gsub(body,
 print([=[
 -- generated from 'lua protocol_binary_h2lua.lua'
 --
-local function uint_t(size, name)
-  return { name = name, size = n }
+local function uint_t(bits, name)
+  return { name      = name,
+           num_bits  = (tonumber(bits)),
+           num_bytes = (tonumber(bits) / 8) }
 end
 ]=])
 
