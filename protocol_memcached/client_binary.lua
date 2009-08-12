@@ -1,3 +1,8 @@
+local function create_request()
+  local n = memcached_protocol_binary.request_header_num_bytes
+  local a = {}
+end
+
 memcached_client_binary = {
   get =
     function(conn, value_callback, keys)
