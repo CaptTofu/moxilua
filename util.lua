@@ -99,7 +99,7 @@ function array_iter(arr, start, step)
   if not step then
     step = 1
   end
-  local next = 1
+  local next = start
   return function()
            if not arr then
              return nil
@@ -111,6 +111,32 @@ function array_iter(arr, start, step)
 end
 
 ------------------------------------------------------
+
+-- Run all functions that have a "TEST_" prefix.
+--
+function TESTALL()
+  for k, v in pairs(_G) do
+    if string.match(k, "^TEST_") then
+      v()
+    end
+  end
+end
+
+function TEST_array_iter()
+  a = {1,2,3,4,5,6}
+  x = array_iter(a)
+  for i = 1, #a do
+    assert(a[i] == x())
+  end
+  assert(not x())
+  assert(not x())
+  x = array_iter(a, 4, 1)
+  for i = 4, #a do
+    assert(a[i] == x())
+  end
+  assert(not x())
+  assert(not x())
+end
 
 function TEST_host_port()
   h, p = host_port("127.0.0.1:11211")
@@ -131,7 +157,7 @@ function TEST_group_by()
   gb = group_by(array_iter({1, 2, 2, 3, 3, 3}),
                 function(x) return x end)
   for k, v in pairs(gb) do
-    print(k, #v, unpack(v))
+    -- print(k, #v, unpack(v))
     assert(k == #v)
   end
 end

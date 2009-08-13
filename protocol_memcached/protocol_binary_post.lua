@@ -82,3 +82,12 @@ for _, name in ipairs({ 'request', 'response' }) do
   memcached_protocol_binary[name .. '_header_num_bytes'] = sum_bytes
 end
 
+function TEST_mpb_post()
+  local mpb = memcached_protocol_binary
+  assert(mpb.trans)
+  assert(mpb.response_header_num_bytes == 24)
+  assert(mpb.request_header_field_index.magic == 1)
+  assert(mpb.response_header_field_index.magic == 1)
+  assert(mpb.request_header_field_index.opcode == 2)
+  assert(mpb.response_header_field_index.opcode == 2)
+end

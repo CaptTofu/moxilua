@@ -118,3 +118,13 @@ mpb.trans = {
   create_response = create_response
 }
 
+------------------------------------------------------
+
+function TEST_network_bytes()
+  assert(network_bytes(0x0fabc, 4))
+  a, b, c, d = network_bytes(0x0faabbcc, 4)
+  assert(a == 0x0f)
+  assert(b == 0xaa)
+  assert(c == 0xbb)
+  assert(d == 0xcc)
+end

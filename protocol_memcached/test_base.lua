@@ -16,30 +16,6 @@ pa = printa
 
 ------------------------------------------
 
-sock_recv = function(skt, pattern)
-  return skt:receive(pattern or "*l")
-end
-
-sock_send = function(skt, data, from, to)
-  return skt:send(data, from, to)
-end
-
-sock_send_recv = function(skt, data, recv_callback)
-  local ok = sock_send(skt, data)
-  if not ok then
-    return nil
-  end
-
-  local rv = sock_recv(skt)
-  if rv and recv_callback then
-    recv_callback(rv)
-  end
-
-  return rv
-end
-
-------------------------------------------
-
 got_list = {}
 function fresh()
   got_list = {}
