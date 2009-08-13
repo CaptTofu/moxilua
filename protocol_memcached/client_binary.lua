@@ -1,9 +1,9 @@
-local mpb   = memcached_protocol_binary
-local trans = memcached_protocol_binary.trans
+local mpb  = memcached_protocol_binary
+local pack = memcached_protocol_binary.trans
 
 memcached_client_binary = {
-  create_request = trans.create_request,
-  create_response = trans.create_response,
+  create_request = pack.create_request,
+  create_response = pack.create_response,
   get =
     function(conn, value_callback, keys)
       local head
@@ -11,10 +11,10 @@ memcached_client_binary = {
       local reqs = {}
 
       for i = 1, #keys do
-        reqs[#reqs + 1] = trans.create_request('GETKQ', keys[i])
+        reqs[#reqs + 1] = pack.create_request('GETKQ', keys[i])
       end
 
-      reqs[#reqs + 1] = trans.create_request('NOOP')
+      reqs[#reqs + 1] = pack.create_request('NOOP')
 
       local reqs_buf = table.concat(reqs)
 
