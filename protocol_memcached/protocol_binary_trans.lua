@@ -1,3 +1,6 @@
+-- Helper functions to create/process binary protocol
+-- transmission packets.
+--
 local mpb = memcached_protocol_binary
 
 local function network_bytes(x, num_bytes)
