@@ -1,5 +1,18 @@
 -- More post-processing on memcached_protocol_binary.
 --
+memcached_protocol_binary.type = {
+  REQ = 'request',
+  RES = 'response',
+  request = 'REQ',
+  response = 'RES'
+}
+
+memcached_protocol_binary.magic.request =
+  memcached_protocol_binary.magic.REQ
+
+memcached_protocol_binary.magic.response =
+  memcached_protocol_binary.magic.RES
+
 memcached_protocol_binary_lookup = {
   response_status = {},
   command = {}
@@ -52,11 +65,18 @@ if false then
   end
 end
 
--- Header sizes
+-- Header sizes, fields and field indexes
 --
 for _, name in ipairs({ 'request', 'response' }) do
+  local header_field = {}
+  local header_field_index = {}
+  memcached_protocol_binary[name .. '_header_field']       = header_field
+  memcached_protocol_binary[name .. '_header_field_index'] = header_field_index
   local sum_bytes = 0
   for i, v in ipairs(memcached_protocol_binary[name .. '_header'][name]) do
+    v.index = sum_bytes + 1
+    header_field[v.name] = v
+    header_field_index[v.name] = v.index
     sum_bytes = sum_bytes + v.num_bytes
   end
   memcached_protocol_binary[name .. '_header_num_bytes'] = sum_bytes

@@ -1,29 +1,44 @@
-local function create_request()
-  local n = memcached_protocol_binary.request_header_num_bytes
-  local a = {}
-end
+local mpb   = memcached_protocol_binary
+local trans = memcached_protocol_binary.trans
 
 memcached_client_binary = {
+  create_request = trans.create_request,
+  create_response = trans.create_response,
   get =
     function(conn, value_callback, keys)
       local head
       local body
-      local line = "get " .. table.concat(keys, ' ') .. "\r\n"
+      local reqs = {}
 
-      local ok = sock_send(conn, line)
+      for i = 1, #keys do
+        reqs[#reqs + 1] = trans.create_request('GETKQ', keys[i])
+      end
+
+      reqs[#reqs + 1] = trans.create_request('NOOP')
+
+      local reqs_buf = table.concat(reqs)
+
+      local ok = sock_send(conn, reqs_buf)
       if not ok then
         return false
       end
 
+      local x = mpb['response_header_field_index']
+
       repeat
-        line = sock_recv(conn)
-        if line then
-          if line == "END" then
+        head = sock_recv(conn, mpb.response_header_num_bytes)
+        if head then
+          if string.byte(head, x.magic) == mpb.magic.RES then
+            return false
+          end
+
+          local opcode = string.byte(head, x.opcode)
+          if opcode == mpb.command.NOOP then
             return true
           end
 
-          if string.find(line, "^VALUE ") then
-            body = sock_recv(conn)
+          if opcode == mpb.command.GETKQ then
+            body = sock_recv(conn) -- !!!!
             if body then
               if value_callback then
                 value_callback(line, body)
