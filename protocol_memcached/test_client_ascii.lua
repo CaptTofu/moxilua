@@ -17,7 +17,7 @@ assert(memcached_client_ascii.flush_all(c, got))
 expected("OK")
 
 fresh()
-assert(memcached_client_ascii.get(c, got, {"a"}))
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c"}))
 expected()
 
 fresh()
@@ -26,7 +26,51 @@ expected("STORED")
 
 fresh()
 assert(memcached_client_ascii.get(c, got, {"a"}))
-expected("VALUE a",
-         "hello")
+expected({"VALUE a",
+          "hello"})
+
+fresh()
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c"}))
+expected({"VALUE a",
+          "hello"})
+
+fresh()
+assert(memcached_client_ascii.set(c, got, {"b", "0", "0", "5"}, "world"))
+expected("STORED")
+
+fresh()
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c"}))
+expected({"VALUE a",
+          "hello"},
+         {"VALUE b",
+          "world"})
+
+fresh()
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c", "a", "b", "c"}))
+expected({"VALUE a",
+          "hello"},
+         {"VALUE b",
+          "world"},
+         {"VALUE a",
+          "hello"},
+         {"VALUE b",
+          "world"})
+
+fresh()
+assert(memcached_client_ascii.delete(c, got, {"b"}))
+expected("DELETED")
+
+fresh()
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c"}))
+expected({"VALUE a",
+          "hello"})
+
+fresh()
+assert(memcached_client_ascii.flush_all(c, got))
+expected("OK")
+
+fresh()
+assert(memcached_client_ascii.get(c, got, {"a", "b", "c"}))
+expected()
 
 p("done!")

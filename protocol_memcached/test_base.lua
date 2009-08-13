@@ -40,22 +40,29 @@ end
 
 ------------------------------------------
 
-got_last = {}
+got_list = {}
 function fresh()
-  got_last = {}
+  got_list = {}
 end
 
 function got(...)
-  got_last = arg
+  got_list[#got_list + 1] = arg
   pa(arg)
 end
 
 function expected(...)
-  assert(#got_last == #arg)
+  assert(#got_list == #arg)
   for i = 1, #arg do
-    if not string.find(got_last[i], "^" .. arg[i]) then
-      p("expected", arg[i], "got", got_last[i])
-      assert(false)
+    local expect = arg[i]
+    if type(expect) == "string" then
+      expect = {expect}
+    end
+    assert(#(got_list[i]) == #expect)
+    for j = 1, #expect do
+      if not string.find(got_list[i][j], "^" .. expect[j]) then
+        p("expected", expect[j], "got", got_list[i][j])
+        assert(false)
+      end
     end
   end
 end
