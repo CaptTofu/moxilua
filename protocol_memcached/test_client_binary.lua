@@ -50,23 +50,20 @@ expected({".+", nil, "a", ".+", "hello"},
          {".+", nil, "a", ".+", "hello"},
          {".+", nil, "b", ".+", "world"})
 
-print("-----------")
-
 fresh()
 assert(client.delete(c, got, {"b"}) == "DELETED")
-expected("DELETED")
+expected(".+")
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({"VALUE a",
-          "hello"})
+expected({".+", nil, "a", ".+", "hello"})
 
 fresh()
 assert(client.flush_all(c, got) == "OK")
-expected("OK")
+expected(".+")
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}))
+assert(client.get(c, got, {"a", "b", "c"}) == "END")
 expected()
 
 p("done!")

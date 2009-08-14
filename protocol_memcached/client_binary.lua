@@ -82,9 +82,28 @@ memcached_client_binary = {
 
   delete =
     function(conn, recv_callback, args)
-      return sock_send_recv(conn,
-                            "delete " .. args[1] .. "\r\n",
-                            recv_callback)
+      local req = pack.create_request('DELETE', args[1])
+
+      local ok, err = sock_send(conn, req)
+      if not ok then
+        return ok, err
+      end
+
+      local head, err, key, ext, data = pack.recv_response(conn)
+      if not head then
+        return head, err
+      end
+
+      if recv_callback then
+        recv_callback(head, err, key, ext, data)
+      end
+
+      if pack.opcode(head, 'response') == pack.opcode(req, 'request') and
+         pack.status(head) == mpb.response_status.SUCCESS then
+        return "DELETED"
+      end
+
+      return false
     end,
 
   flush_all =
