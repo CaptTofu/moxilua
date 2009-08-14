@@ -11,17 +11,17 @@ if _G.sock_recv == nil and
   end
 
   function asock_send_recv(self_addr, skt, msg, recv_callback, pattern)
-    local ok = asock.send(self_addr, skt, msg)
+    local ok, err = asock.send(self_addr, skt, msg)
     if not ok then
-      return nil
+      return ok, err
     end
 
-    local rv = asock.recv(self_addr, skt, pattern or "*l")
+    local rv, err = asock.recv(self_addr, skt, pattern or "*l")
     if rv and recv_callback then
       recv_callback(rv)
     end
 
-    return rv
+    return rv, err
   end
 
   function sock_send_recv(skt, data, recv_callback, pattern)

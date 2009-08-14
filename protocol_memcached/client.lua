@@ -25,16 +25,16 @@ if _G.sock_recv == nil and
   end
 
   sock_send_recv = function(skt, data, recv_callback, pattern)
-    local ok = sock_send(skt, data)
+    local ok, err = sock_send(skt, data)
     if not ok then
-      return nil
+      return ok, err
     end
 
-    local rv = sock_recv(skt, pattern or "*l")
+    local rv, err = sock_recv(skt, pattern or "*l")
     if rv and recv_callback then
       recv_callback(rv)
     end
 
-    return rv
+    return rv, err
   end
 end
