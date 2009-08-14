@@ -34,5 +34,5 @@ $ lua -l luarocks.require main.lua
 
 To run client tests, use:
 
-$ lua -i luarocks.require protocol_memcached/test_client_ascii.lua [host:port]
-$ lua -i luarocks.require protocol_memcached/test_client_binary.lua [host:port]
+$ lua -l luarocks.require protocol_memcached/test_client_ascii.lua [host:port]
+$ lua -l luarocks.require protocol_memcached/test_client_binary.lua [host:port]
