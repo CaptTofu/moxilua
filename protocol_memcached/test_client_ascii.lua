@@ -23,7 +23,7 @@ assert(client.get(c, got, {"a", "b", "c"}))
 expected()
 
 fresh()
-assert(client.set(c, got, {"a", "0", "0", "5"}, "hello"))
+assert(client.set(c, got, {"a", "0", "0"}, "hello") == "STORED")
 expected("STORED")
 
 fresh()
@@ -37,7 +37,7 @@ expected({"VALUE a",
           "hello"})
 
 fresh()
-assert(client.set(c, got, {"b", "0", "0", "5"}, "world"))
+assert(client.set(c, got, {"b", "0", "0"}, "world") == "STORED")
 expected("STORED")
 
 fresh()

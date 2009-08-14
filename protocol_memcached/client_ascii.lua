@@ -15,7 +15,7 @@ memcached_client_ascii = {
         end
 
         if line == "END" then
-          return true
+          return "END"
         end
 
         local body = nil
@@ -34,8 +34,11 @@ memcached_client_ascii = {
   set =
     function(conn, value_callback, args, value)
       return sock_send_recv(conn,
-                            "set " .. args[1] ..
-                            " 0 0 " .. string.len(value) .. "\r\n" ..
+                            "set " ..
+                            (args[1])      .. " " ..
+                            (args[2] or 0) .. " " ..
+                            (args[3] or 0) .. " " ..
+                            string.len(value) .. "\r\n" ..
                             value .. "\r\n",
                             value_callback)
     end,
