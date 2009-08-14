@@ -24,8 +24,9 @@ if _G.sock_recv == nil and
     return rv
   end
 
-  function sock_send_recv(skt, data, recv_callback)
-    return asock_send_recv(apo.self_address(), skt, data, recv_callback)
+  function sock_send_recv(skt, data, recv_callback, pattern)
+    return asock_send_recv(apo.self_address(),
+                           skt, data, recv_callback, pattern)
   end
 end
 

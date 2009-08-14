@@ -23,16 +23,16 @@ memcached_client_binary = {
         return false
       end
 
-      local x = mpb['response_header_field_index']
+      local fx = mpb.request_header_field_index
 
       repeat
         head = sock_recv(conn, mpb.response_header_num_bytes)
         if head then
-          if string.byte(head, x.magic) == mpb.magic.RES then
+          if string.byte(head, fx.magic) == mpb.magic.RES then
             return false
           end
 
-          local opcode = string.byte(head, x.opcode)
+          local opcode = string.byte(head, fx.opcode)
           if opcode == mpb.command.NOOP then
             return true
           end
@@ -76,7 +76,23 @@ memcached_client_binary = {
   flush_all =
     function(conn, value_callback, args)
       local req = pack.create_request('FLUSH')
-      return sock_send_recv(conn, req, value_callback)
+      local res = sock_send_recv(conn, req, value_callback,
+                                 mpb.response_header_num_bytes)
+
+      local fh = mpb.response_header_field
+      local fx = mpb.response_header_field_index
+
+      if res and
+        string.byte(res, fx.magic) == mpb.magic.RES and
+        string.byte(res, fx.opcode) == string.byte(req, fx.opcode) and
+        pack.network_bytes_to_number(res,
+                                     fx.status,
+                                     fh.status.num_bytes) ==
+          mpb.response_status.SUCCESS then
+        return "OK"
+      end
+
+      return false
     end
 }
 

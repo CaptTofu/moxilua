@@ -1,20 +1,60 @@
--- Helper functions to create/process binary protocol packets.
+-- Helper functions to create/process memcached binary protocol packets.
 --
 local mpb = memcached_protocol_binary
 
-local function network_bytes(x, num_bytes)
+------------------------------------------------------
+
+-- Creates array of bytes from an input integer x.
+-- Highest order bytes comes first (network byte ordering).
+--
+local function network_bytes_array(x, num_bytes)
   local a = {}
   for i = num_bytes, 1, -1 do
-    a[i] = math.mod(x, 0x0100) -- lua has no builtin bit mask/shift operators.
+    a[i] = math.mod(x, 0x0100) -- lua has no bitmask/shift operators.
     x = math.floor(x / 0x0100)
   end
-  return unpack(a) -- returns array of bytes numbers, highest order first.
+  return a -- returns array of bytes numbers, highest order first.
+end
+
+-- Multiple return values of network ordered bytes from an input integer x.
+-- Highest order bytes comes first (network byte ordering).
+--
+local function network_bytes(x, num_bytes)
+  return unpack(network_bytes_array(x, num_bytes))
+end
+
+-- Converts array of network ordered bytes to a number.
+--
+local function network_bytes_to_number(arr, from, num_bytes)
+  assert(num_bytes >= 1 and num_bytes <= 4)
+
+  local x = 0
+
+  for i = 1, num_bytes do
+    x = x * 0x0100
+    x = x + math.mod(arr[i + from - 1] or 0, 0x0100)
+  end
+
+  return x
+end
+
+local function print_bytes(s)
+  local n = string.len(s)
+  local i = 1
+  while i < n do
+    print("  " ..
+          string.format('x%2x ', string.byte(s, i + 0)) ..
+          string.format('x%2x ', string.byte(s, i + 1)) ..
+          string.format('x%2x ', string.byte(s, i + 2)) ..
+          string.format('x%2x ', string.byte(s, i + 3)))
+    i = i + 4
+  end
 end
 
 ------------------------------------------------------
 
 local function create_header(type, cmd,
-                             key, ext, datatype, statusOrReserved, body,
+                             key, ext, datatype, statusOrReserved, data,
                              opaque, cas)
   local keylen = 0
   if key then
@@ -26,10 +66,12 @@ local function create_header(type, cmd,
     extlen = string.len(ext)
   end
 
-  local bodylen = 0
-  if body then
-    bodylen = string.len(body)
+  local datalen = 0
+  if data then
+    datalen = string.len(data)
   end
+
+  bodylen = keylen + extlen + datalen
 
   statusOrReserved = statusOrReserved or 0
 
@@ -91,29 +133,34 @@ end
 ------------------------------------------------------
 
 local function create_request(cmd,
-                              key, ext, datatype, statusOrReserved, body,
+                              key, ext, datatype, statusOrReserved, data,
                               opaque, cas)
   local h = create_header('request', cmd,
-                          key, ext, datatype, statusOrReserved, body,
+                          key, ext, datatype, statusOrReserved, data,
                           opaque, cas)
-  return h .. (key or "") .. (ext or "") .. (body or "")
+  return h .. (ext or "") .. (key or "") .. (data or "")
 end
 
 local function create_response(cmd,
-                               key, ext, datatype, statusOrReserved, body,
+                               key, ext, datatype, statusOrReserved, data,
                                opaque, cas)
   local h = create_header('response', cmd,
-                          key, ext, datatype, statusOrReserved, body,
+                          key, ext, datatype, statusOrReserved, data,
                           opaque, cas)
-  return h .. (key or "") .. (ext or "") .. (body or "")
+  return h .. (ext or "") .. (key or "") .. (data or "")
 end
 
 ------------------------------------------------------
 
 mpb.pack = {
-  network_bytes = network_bytes,
-  create_header = create_header,
-  create_request = create_request,
+  network_bytes           = network_bytes,
+  network_bytes_array     = network_bytes_array,
+  network_bytes_to_number = network_bytes_to_number,
+
+  print_bytes = print_bytes,
+
+  create_header   = create_header,
+  create_request  = create_request,
   create_response = create_response
 }
 
@@ -131,4 +178,22 @@ function TEST_network_bytes()
   assert(b == 0xaa)
   assert(c == 0xbb)
   assert(d == 0xcc)
+
+  x = 0
+  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+
+  x = 0x01
+  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+
+  x = 0x111
+  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+
+  x = 0x0faabbcc
+  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+
+  x = 0x8faabbcc
+  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+
+  x = 0x8faabbcc
+  assert(network_bytes_to_number(network_bytes_array(x, 2), 1, 2) == 0xbbcc)
 end

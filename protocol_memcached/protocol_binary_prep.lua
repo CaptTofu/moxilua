@@ -86,8 +86,16 @@ function TEST_mpb_post()
   local mpb = memcached_protocol_binary
   assert(mpb.pack)
   assert(mpb.response_header_num_bytes == 24)
+
   assert(mpb.request_header_field_index.magic == 1)
   assert(mpb.response_header_field_index.magic == 1)
+
   assert(mpb.request_header_field_index.opcode == 2)
   assert(mpb.response_header_field_index.opcode == 2)
+
+  assert(mpb.request_header_field_index.magic ==
+         mpb.request_header_field.magic.index)
+
+  assert(mpb.request_header_field.magic.num_bytes == 1)
+  assert(mpb.request_header_field.opcode.num_bytes == 1)
 end

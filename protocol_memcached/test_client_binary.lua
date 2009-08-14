@@ -15,8 +15,7 @@ c:settimeout(nil)
 p("connected", host, port, c)
 
 fresh()
-assert(client.flush_all(c, got))
-expected("OK")
+assert(client.flush_all(c, got) == "OK")
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}))
