@@ -179,7 +179,7 @@ end
 ------------------------------------------------------
 
 local function recv_request(conn)
-  return recv_request(conn, 'request')
+  return recv_message(conn, 'request')
 end
 
 local function recv_response(conn)
