@@ -1,39 +1,33 @@
 memcached_client_ascii = {
   get =
     function(conn, value_callback, keys)
-      local head
-      local body
       local line = "get " .. table.concat(keys, ' ') .. "\r\n"
 
-      local ok = sock_send(conn, line)
+      local ok, err = sock_send(conn, line)
       if not ok then
-        return false
+        return ok, err
       end
 
       repeat
-        line = sock_recv(conn)
-        if line then
-          if line == "END" then
-            return true
-          end
-
-          if string.find(line, "^VALUE ") then
-            body = sock_recv(conn)
-            if body then
-              if value_callback then
-                value_callback(line, body)
-              end
-            else
-              return false
-            end
-          else
-            if value_callback then
-              value_callback(line, nil)
-            end
-          end
-        else
-          return false
+        local line, err = sock_recv(conn)
+        if not line then
+          return line, err
         end
+
+        if line == "END" then
+          return true
+        end
+
+        local body = nil
+
+        if string.find(line, "^VALUE ") then
+          body, err = sock_recv(conn)
+          if not body then
+            return body, err
+          end
+        end
+
+        value_callback(line, body)
       until false
     end,
 
