@@ -15,7 +15,7 @@ memcached_client_ascii = {
         end
 
         if line == "END" then
-          return "END"
+          return line
         end
 
         local body = nil
