@@ -14,7 +14,7 @@ memcached_server_ascii_proxy = {
         apo.recv()
       end
 
-      return sock_send(skt, "END\r\n") ~= nil
+      return sock_send(skt, "END\r\n")
     end,
 
   set =
@@ -27,21 +27,23 @@ memcached_server_ascii_proxy = {
       if key and flgs and expt and size then
         size = tonumber(size)
         if size >= 0 then
-          local data = sock_recv(skt, tonumber(size) + 2)
-          if data then
-            local downstream_addr = pool.choose(key)
-            if downstream_addr then
-              apo.send(downstream_addr, apo.self_address(),
-                       skt, "set", {key},
-                       string.sub(data, 1, -3))
-              apo.recv()
-              return true
-            end
+          local data, err = sock_recv(skt, tonumber(size) + 2)
+          if not data then
+            return data, err
+          end
+
+          local downstream_addr = pool.choose(key)
+          if downstream_addr then
+            apo.send(downstream_addr, apo.self_address(),
+                     skt, "set", {key},
+                     string.sub(data, 1, -3))
+            apo.recv()
+            return true
           end
         end
       end
 
-      return sock_send(skt, "ERROR\r\n") ~= nil
+      return sock_send(skt, "ERROR\r\n")
     end,
 
   delete =
@@ -57,7 +59,7 @@ memcached_server_ascii_proxy = {
         end
       end
 
-      return sock_send(skt, "ERROR\r\n") ~= nil
+      return sock_send(skt, "ERROR\r\n")
     end,
 
   flush_all =
@@ -74,7 +76,7 @@ memcached_server_ascii_proxy = {
         apo.recv()
       end
 
-      return sock_send(skt, "OK\r\n") ~= nil
+      return sock_send(skt, "OK\r\n")
     end,
 
   quit =

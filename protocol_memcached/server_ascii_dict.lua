@@ -4,12 +4,15 @@ memcached_server_ascii_dict = {
       for key in itr do
         data = dict.tbl[key]
         if data then
-          if not sock_send(skt, "VALUE " .. key .. "\r\n" .. data) then
-            return false
+          local ok, err = sock_send(skt, "VALUE " ..
+                                         key .. "\r\n" ..
+                                         data .. "\r\n")
+          if not ok then
+            return ok, err
           end
         end
       end
-      return sock_send(skt, "END\r\n") ~= nil
+      return sock_send(skt, "END\r\n")
     end,
 
   set =
@@ -22,16 +25,18 @@ memcached_server_ascii_dict = {
       if key and flgs and expt and size then
         size = tonumber(size)
         if size >= 0 then
-          local data = sock_recv(skt, tonumber(size) + 2)
-          if data then
-            dict.tbl[key] = data
-            return sock_send(skt, "STORED\r\n") ~= nil
-          else
-            return false
+          local data, err = sock_recv(skt, tonumber(size) + 2)
+          if not data then
+            return data, err
           end
+
+          dict.tbl[key] = string.sub(data, 1, -3)
+
+          return sock_send(skt, "STORED\r\n")
         end
       end
-      return sock_send(skt, "ERROR\r\n") ~= nil
+
+      return sock_send(skt, "ERROR\r\n")
     end,
 
   delete =
@@ -40,18 +45,18 @@ memcached_server_ascii_dict = {
       if key then
         if dict.tbl[key] then
           dict.tbl[key] = nil
-          return sock_send(skt, "DELETED\r\n") ~= nil
+          return sock_send(skt, "DELETED\r\n")
         else
-          return sock_send(skt, "NOT_FOUND\r\n") ~= nil
+          return sock_send(skt, "NOT_FOUND\r\n")
         end
       end
-      return sock_send(skt, "ERROR\r\n") ~= nil
+      return sock_send(skt, "ERROR\r\n")
     end,
 
   flush_all =
     function(dict, skt, itr)
       dict.tbl = {}
-      return sock_send(skt, "OK\r\n") ~= nil
+      return sock_send(skt, "OK\r\n")
     end,
 
   quit =
