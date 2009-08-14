@@ -264,6 +264,36 @@ end
 
 ------------------------------------------------------
 
+-- Sends a simple command (that has a single reply)
+-- and receives response.
+--
+local function send_recv_simple(conn, cmd, args, recv_callback, success)
+  local req = create_request(cmd, unpack(args))
+
+  local ok, err = sock_send(conn, req)
+  if not ok then
+    return ok, err
+  end
+
+  local head, err, key, ext, data = recv_response(conn)
+  if not head then
+    return head, err
+  end
+
+  if recv_callback then
+    recv_callback(head, err, key, ext, data)
+  end
+
+  if opcode(head, 'response') == opcode(req, 'request') and
+     status(head) == mpb.response_status.SUCCESS then
+    return success
+  end
+
+  return false
+end
+
+------------------------------------------------------
+
 mpb.pack = {
   network_bytes                  = network_bytes,
   network_bytes_array            = network_bytes_array,
@@ -283,7 +313,9 @@ mpb.pack = {
   recv_response = recv_response,
 
   opcode = opcode,
-  status = status
+  status = status,
+
+  send_recv_simple = send_recv_simple
 }
 
 ------------------------------------------------------
