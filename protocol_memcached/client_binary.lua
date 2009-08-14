@@ -55,41 +55,22 @@ memcached_client_binary = {
 
       local req = pack.create_request_simple('SET', key, ext, value)
 
-      local ok, err = sock_send(conn, req)
-      if not ok then
-        return ok, err
-      end
-
-      local head, err, key, ext, data = pack.recv_response(conn)
-      if not head then
-        return head, err
-      end
-
-      if recv_callback then
-        recv_callback(head, err, key, ext, data)
-      end
-
-      if pack.opcode(head, 'response') == pack.opcode(req, 'request') then
-        if pack.status(head) == mpb.response_status.SUCCESS then
-          return "STORED"
-        end
-
-        return false, data
-      end
-
-      return nil, "unexpected opcode"
+      return pack.send_recv(conn, req,
+                            recv_callback, "STORED")
     end,
 
   delete =
     function(conn, recv_callback, args)
-      return pack.send_recv_simple(conn, 'DELETE', { args[1] },
-                                   recv_callback, "DELETED")
+      return pack.send_recv(conn,
+                            pack.create_request('DELETE', args[1]),
+                            recv_callback, "DELETED")
     end,
 
   flush_all =
     function(conn, recv_callback, args)
-      return pack.send_recv_simple(conn, 'FLUSH', {},
-                                   recv_callback, "OK")
+      return pack.send_recv(conn,
+                            pack.create_request('FLUSH'),
+                            recv_callback, "OK")
     end
 }
 

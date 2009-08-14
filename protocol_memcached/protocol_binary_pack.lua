@@ -264,12 +264,9 @@ end
 
 ------------------------------------------------------
 
--- Sends a simple command (that has a single reply)
--- and receives response.
+-- Sends a single request and receives a single response.
 --
-local function send_recv_simple(conn, cmd, args, recv_callback, success)
-  local req = create_request(cmd, unpack(args))
-
+local function send_recv(conn, req, recv_callback, success_value)
   local ok, err = sock_send(conn, req)
   if not ok then
     return ok, err
@@ -284,12 +281,15 @@ local function send_recv_simple(conn, cmd, args, recv_callback, success)
     recv_callback(head, err, key, ext, data)
   end
 
-  if opcode(head, 'response') == opcode(req, 'request') and
-     status(head) == mpb.response_status.SUCCESS then
-    return success
+  if opcode(head, 'response') == opcode(req, 'request') then
+    if status(head) == mpb.response_status.SUCCESS then
+      return success_value
+    end
+
+    return false, data
   end
 
-  return false
+  return false, "unexpected opcode " .. opcode(head, 'response')
 end
 
 ------------------------------------------------------
@@ -312,10 +312,10 @@ mpb.pack = {
   recv_request  = recv_request,
   recv_response = recv_response,
 
-  opcode = opcode,
-  status = status,
+  send_recv = send_recv,
 
-  send_recv_simple = send_recv_simple
+  opcode = opcode,
+  status = status
 }
 
 ------------------------------------------------------
