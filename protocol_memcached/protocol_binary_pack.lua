@@ -113,11 +113,11 @@ end
 ------------------------------------------------------
 
 local function create_request_simple(cmd, key, ext, data, cas)
-   return create_request(cmd, key, ext, 0, 0, data, nil, cas)
+  return create_request(cmd, key, ext, 0, 0, data, nil, cas)
 end
 
 local function create_response_simple(cmd, status, opaque, key, ext, data, cas)
-    pack.create_response(cmd, key, ext, 0, status, data, opaque, cas)
+  return create_response(cmd, key, ext, 0, status, data, opaque, cas)
 end
 
 ------------------------------------------------------

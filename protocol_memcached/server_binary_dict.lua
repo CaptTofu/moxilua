@@ -39,9 +39,10 @@ msbd[mpb.command.QUIT] =
 msbd[mpb.command.FLUSH] =
   function(dict, skt, req, key, ext, data)
     dict.tbl = {}
-    pack.create_response_simple(mpb.command.FLUSH,
-                                mpb.response_status.SUCCESS,
-                                pack.opaque(req, 'request'))
+    local res = pack.create_response_simple(mpb.command.FLUSH,
+                                            mpb.response_status.SUCCESS,
+                                            pack.opaque(req, 'request'))
+    sock_send(skt, res)
   end
 
 msbd[mpb.command.GETQ] =
