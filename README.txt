@@ -2,10 +2,10 @@ Getting lua running on your system:
 
 Prerequsites:
 
-- lua      - the lua language runtime/interpreter
+- lua      - the lua language runtime/interpreter, version 5.1+.
 - luarocks - the 'gem'-like system for lua.
 
-For example:
+For example, on Mac OSX:
 
 $ sudo port install lua
 
@@ -14,14 +14,13 @@ Then, get luarocks and make/install it.
 Then:
 
 $ luarocks install luasocket
-$ luarocks install copas
 
 Then, make sure LUA_PATH is setup right.  For example,
 somewhere in my ~/.profile file, I have:
 
 export LUA_PATH="/usr/local/share/lua/5.1//?.lua;/usr/local/share/lua/5.1//?/init.lua;$LUA_PATH"
 
-To get a lua REPL, use:
+To get a lua REPL with luarocks enabled, use:
 
 $ lua -l luarocks.require
 
@@ -29,7 +28,11 @@ Or to launch a script, use:
 
 $ lua -l luarocks.require <some_script.lua> <arg1> ... <argN>
 
-In particular, use:
+To start a server, use:
 
 $ lua -l luarocks.require main.lua
 
+To run client tests, use:
+
+$ lua -i luarocks.require protocol_memcached/test_client_ascii.lua [host:port]
+$ lua -i luarocks.require protocol_memcached/test_client_binary.lua [host:port]
