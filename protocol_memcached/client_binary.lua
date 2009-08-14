@@ -1,5 +1,8 @@
+local pru  = protocol_util
 local mpb  = memcached_protocol_binary
 local pack = memcached_protocol_binary.pack
+
+local network_bytes = pru.network_bytes
 
 memcached_client_binary = {
   create_request = pack.create_request,
@@ -49,8 +52,8 @@ memcached_client_binary = {
       local flg = args[2]
       local exp = args[3]
 
-      local flg_bytes = string.char(pack.network_bytes(flg, 4))
-      local exp_bytes = string.char(pack.network_bytes(exp, 4))
+      local flg_bytes = string.char(network_bytes(flg, 4))
+      local exp_bytes = string.char(network_bytes(exp, 4))
       local ext = flg_bytes .. exp_bytes
 
       local req = pack.create_request_simple('SET', key, ext, value)

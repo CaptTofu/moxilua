@@ -1,5 +1,7 @@
 -- All the parts required for memcached client...
 --
+require('protocol_util')
+
 require('protocol_memcached/protocol_binary')
 require('protocol_memcached/protocol_binary_prep')
 require('protocol_memcached/protocol_binary_pack')

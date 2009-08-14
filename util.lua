@@ -123,6 +123,7 @@ end
 function TESTALL()
   for k, v in pairs(_G) do
     if string.match(k, "^TEST_") then
+      print("- " .. k)
       v()
     end
   end
