@@ -37,10 +37,11 @@ function upstream_session_ascii(self_addr, upstream_skt, specs, go_data)
   upstream_skt:close()
 end
 
-function upstream_accept(self_addr, server_skt, specs, go_data)
+function upstream_accept(self_addr, server_skt,
+                         session_actor_func, specs, go_data)
   asock.loop_accept(self_addr, server_skt, function(upstream_skt)
     upstream_skt:settimeout(0)
-    apo.spawn(upstream_session_ascii, upstream_skt, specs, go_data)
+    apo.spawn(session_actor_func, upstream_skt, specs, go_data)
   end)
 end
 
@@ -48,12 +49,18 @@ end
 
 host = "127.0.0.1"
 
+dict = { tbl = {} }
+
+-- Start ascii server.
 server = socket.bind(host, 11311)
 apo.spawn(upstream_accept, server,
-          memcached_server_ascii_dict, { tbl = {} })
+          upstream_session_ascii,
+          memcached_server_ascii_dict, dict)
 
-server = socket.bind(host, 11333)
+-- Start ascii proxy to ascii self.
+server = socket.bind(host, 11322)
 apo.spawn(upstream_accept, server,
+          upstream_session_ascii,
           memcached_server_ascii_proxy,
           memcached_pool({ "127.0.0.1:11311" }))
 
