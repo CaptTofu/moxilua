@@ -1,6 +1,6 @@
 memcached_client_ascii = {
   get =
-    function(conn, value_callback, keys)
+    function(conn, recv_callback, keys)
       local line = "get " .. table.concat(keys, ' ') .. "\r\n"
 
       local ok, err = sock_send(conn, line)
@@ -27,12 +27,12 @@ memcached_client_ascii = {
           end
         end
 
-        value_callback(line, body)
+        recv_callback(line, body)
       until false
     end,
 
   set =
-    function(conn, value_callback, args, value)
+    function(conn, recv_callback, args, value)
       return sock_send_recv(conn,
                             "set " ..
                             (args[1])      .. " " ..
@@ -40,21 +40,21 @@ memcached_client_ascii = {
                             (args[3] or 0) .. " " ..
                             string.len(value) .. "\r\n" ..
                             value .. "\r\n",
-                            value_callback)
+                            recv_callback)
     end,
 
   delete =
-    function(conn, value_callback, args)
+    function(conn, recv_callback, args)
       return sock_send_recv(conn,
                             "delete " .. args[1] .. "\r\n",
-                            value_callback)
+                            recv_callback)
     end,
 
   flush_all =
-    function(conn, value_callback, args)
+    function(conn, recv_callback, args)
       return sock_send_recv(conn,
                             "flush_all\r\n",
-                            value_callback)
+                            recv_callback)
     end
 }
 
