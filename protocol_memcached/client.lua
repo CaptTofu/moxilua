@@ -7,11 +7,15 @@ require('protocol_memcached/protocol_binary_pack')
 require('protocol_memcached/client_binary')
 require('protocol_memcached/client_ascii')
 
+--------------------------------------------
+
+-- Setup a default, overridable implementation using blocking
+-- LuaSocket implementation.  Assumes caller is doing
+-- the "socket = require('socket')".
+--
 if _G.sock_recv == nil and
    _G.sock_send == nil and
    _G.sock_send_recv == nil then
-  -- Default implementation is blocking LuaSocket implementation.
-  --
   sock_recv = function(skt, pattern)
     return skt:receive(pattern or "*l")
   end

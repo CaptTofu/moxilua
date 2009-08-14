@@ -1,5 +1,5 @@
 local mpb  = memcached_protocol_binary
-local pack = memcached_protocol_binary.trans
+local pack = memcached_protocol_binary.pack
 
 memcached_client_binary = {
   create_request = pack.create_request,

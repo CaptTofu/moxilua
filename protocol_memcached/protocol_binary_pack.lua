@@ -1,5 +1,4 @@
--- Helper functions to create/process binary protocol
--- transmission packets.
+-- Helper functions to create/process binary protocol packets.
 --
 local mpb = memcached_protocol_binary
 
@@ -111,7 +110,7 @@ end
 
 ------------------------------------------------------
 
-mpb.trans = {
+mpb.pack = {
   network_bytes = network_bytes,
   create_header = create_header,
   create_request = create_request,
