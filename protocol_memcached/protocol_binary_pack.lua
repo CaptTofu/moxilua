@@ -27,7 +27,7 @@ end
 
 -- Converts array of network ordered bytes to a number.
 --
-local function network_bytes_to_number(arr, from, num_bytes)
+local function network_bytes_array_to_number(arr, from, num_bytes)
   assert(num_bytes >= 1 and num_bytes <= 4)
 
   local x = 0
@@ -35,6 +35,21 @@ local function network_bytes_to_number(arr, from, num_bytes)
   for i = 1, num_bytes do
     x = x * 0x0100
     x = x + math.mod(arr[i + from - 1] or 0, 0x0100)
+  end
+
+  return x
+end
+
+-- Converts string of network ordered bytes to a number.
+--
+local function network_bytes_string_to_number(str, from, num_bytes)
+  assert(num_bytes >= 1 and num_bytes <= 4)
+
+  local x = 0
+
+  for i = 1, num_bytes do
+    x = x * 0x0100
+    x = x + math.mod(string.byte(str, i + from - 1) or 0, 0x0100)
   end
 
   return x
@@ -172,24 +187,25 @@ local function recv_message(conn, type)
   local fx = mpb[type .. "_header_field_index"]
 
   if string.byte(hdr, fx.magic) ~= mpb.magic[type] then
-    return nil
+    return false, "unexpected magic " .. string.byte(hdr, fx.magic)
   end
 
-  local opcode = string.byte(hdr, fx.opcode)
-
-  local keylen = network_bytes_to_number(hdr,
-                                         fx.keylen,
-                                         fh.keylen.num_bytes)
-  local extlen = network_bytes_to_number(hdr,
-                                         fx.extlen,
-                                         fh.extlen.num_bytes)
-  local bodylen = network_bytes_to_number(hdr,
-                                          fx.bodylen,
-                                          fh.bodylen.num_bytes)
+  local keylen =
+    network_bytes_string_to_number(hdr,
+                                   fx.keylen,
+                                   fh.keylen.num_bytes)
+  local extlen =
+    network_bytes_string_to_number(hdr,
+                                   fx.extlen,
+                                   fh.extlen.num_bytes)
+  local bodylen =
+    network_bytes_string_to_number(hdr,
+                                   fx.bodylen,
+                                   fh.bodylen.num_bytes)
 
   local datalen = bodylen - (keylen + extlen)
   if datalen < 0 then
-    return nil
+    return false, "unexpected datalen " .. datalen
   end
 
   local ext = nil
@@ -241,17 +257,18 @@ local function status(hdr)
   local fh = mpb.response_header_field
   local fx = mpb.response_header_field_index
 
-  return network_bytes_to_number(hdr,
-                                 fx.status,
-                                 fh.status.num_bytes)
+  return network_bytes_string_to_number(hdr,
+                                        fx.status,
+                                        fh.status.num_bytes)
 end
 
 ------------------------------------------------------
 
 mpb.pack = {
-  network_bytes           = network_bytes,
-  network_bytes_array     = network_bytes_array,
-  network_bytes_to_number = network_bytes_to_number,
+  network_bytes                  = network_bytes,
+  network_bytes_array            = network_bytes_array,
+  network_bytes_array_to_number  = network_bytes_array_to_number,
+  network_bytes_string_to_number = network_bytes_string_to_number,
 
   print_bytes = print_bytes,
 
@@ -290,20 +307,20 @@ function TEST_network_bytes()
   assert(string.len(s) == 4)
 
   x = 0
-  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 4), 1, 4) == x)
 
   x = 0x01
-  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 4), 1, 4) == x)
 
   x = 0x111
-  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 4), 1, 4) == x)
 
   x = 0x0faabbcc
-  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 4), 1, 4) == x)
 
   x = 0x8faabbcc
-  assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 4), 1, 4) == x)
 
   x = 0x8faabbcc
-  assert(network_bytes_to_number(network_bytes_array(x, 2), 1, 2) == 0xbbcc)
+  assert(network_bytes_array_to_number(network_bytes_array(x, 2), 1, 2) == 0xbbcc)
 end

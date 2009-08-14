@@ -6,7 +6,7 @@ memcached_client_binary = {
   create_response = pack.create_response,
 
   get =
-    function(conn, value_callback, keys)
+    function(conn, recv_callback, keys)
       local reqs = {}
 
       for i = 1, #keys do
@@ -34,8 +34,8 @@ memcached_client_binary = {
         end
 
         if opcode == mpb.command.GETKQ then
-          if value_callback then
-            value_callback(head, key, ext, data)
+          if recv_callback then
+            recv_callback(head, err, key, ext, data)
           end
         else
           return false, "unexpected opcode " .. opcode
@@ -44,7 +44,7 @@ memcached_client_binary = {
     end,
 
   set =
-    function(conn, value_callback, args, value)
+    function(conn, recv_callback, args, value)
       local key = args[1]
       local flg = args[2]
       local exp = args[3]
@@ -65,6 +65,10 @@ memcached_client_binary = {
         return head, err
       end
 
+      if recv_callback then
+        recv_callback(head, err, key, ext, data)
+      end
+
       if pack.opcode(head, 'response') == pack.opcode(req, 'request') then
         if pack.status(head) == mpb.response_status.SUCCESS then
           return "STORED"
@@ -77,14 +81,14 @@ memcached_client_binary = {
     end,
 
   delete =
-    function(conn, value_callback, args)
+    function(conn, recv_callback, args)
       return sock_send_recv(conn,
                             "delete " .. args[1] .. "\r\n",
-                            value_callback)
+                            recv_callback)
     end,
 
   flush_all =
-    function(conn, value_callback, args)
+    function(conn, recv_callback, args)
       local req = pack.create_request('FLUSH')
 
       local ok, err = sock_send(conn, req)
@@ -93,9 +97,12 @@ memcached_client_binary = {
       end
 
       local head, err, key, ext, data = pack.recv_response(conn)
-
       if not head then
         return head, err
+      end
+
+      if recv_callback then
+        recv_callback(head, err, key, ext, data)
       end
 
       if pack.opcode(head, 'response') == pack.opcode(req, 'request') and

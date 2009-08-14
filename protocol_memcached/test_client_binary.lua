@@ -16,7 +16,7 @@ p("connected", host, port, c)
 
 fresh()
 assert(client.flush_all(c, got) == "OK")
-expected("OK")
+expected(".+")
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
@@ -24,38 +24,33 @@ expected()
 
 fresh()
 assert(client.set(c, got, {"a", 0, 0}, "hello") == "STORED")
--- expected(some_binary_packet)
+expected(".+")
 
 fresh()
-print(client.get(c, got, {"a"}) == "END")
-expected({"", "hello"})
+assert(client.get(c, got, {"a"}) == "END")
+expected({".+", nil, "a", ".+", "hello"})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({"VALUE a",
-          "hello"})
+expected({".+", nil, "a", ".+", "hello"})
 
 fresh()
 assert(client.set(c, got, {"b", 0, 0}, "world"))
-expected("STORED")
+expected(".+")
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({"VALUE a",
-          "hello"},
-         {"VALUE b",
-          "world"})
+expected({".+", nil, "a", ".+", "hello"},
+         {".+", nil, "b", ".+", "world"})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c", "a", "b", "c"}) == "END")
-expected({"VALUE a",
-          "hello"},
-         {"VALUE b",
-          "world"},
-         {"VALUE a",
-          "hello"},
-         {"VALUE b",
-          "world"})
+expected({".+", nil, "a", ".+", "hello"},
+         {".+", nil, "b", ".+", "world"},
+         {".+", nil, "a", ".+", "hello"},
+         {".+", nil, "b", ".+", "world"})
+
+print("-----------")
 
 fresh()
 assert(client.delete(c, got, {"b"}) == "DELETED")

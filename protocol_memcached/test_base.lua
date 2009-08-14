@@ -27,7 +27,7 @@ function got(...)
 end
 
 function expected(...)
-  assert(#got_list == #arg)
+  assert(#got_list == #arg, "#got_list != #arg, " .. #got_list .. " " .. #arg)
   for i = 1, #arg do
     local expect = arg[i]
     if type(expect) == "string" then
@@ -35,9 +35,13 @@ function expected(...)
     end
     assert(#(got_list[i]) == #expect)
     for j = 1, #expect do
-      if not string.find(got_list[i][j], "^" .. expect[j]) then
-        p("expected", expect[j], "got", got_list[i][j])
-        assert(false)
+      if expect[j] == nil then
+        assert(got_list[i][j] == nil)
+      else
+        if not string.find(got_list[i][j], "^" .. expect[j]) then
+          p("expected", expect[j], "got", got_list[i][j])
+          assert(false)
+        end
       end
     end
   end
