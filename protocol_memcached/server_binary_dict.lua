@@ -39,9 +39,10 @@ msbd[mpb.command.QUIT] =
 msbd[mpb.command.FLUSH] =
   function(dict, skt, req, key, ext, data)
     dict.tbl = {}
-    local res = pack.create_response_simple(mpb.command.FLUSH,
-                                            mpb.response_status.SUCCESS,
-                                            pack.opaque(req, 'request'))
+    local res =
+      pack.create_response_simple(mpb.command.FLUSH,
+                                  mpb.response_status.SUCCESS,
+                                  pack.opaque(req, 'request'))
     sock_send(skt, res)
   end
 
@@ -51,6 +52,11 @@ msbd[mpb.command.GETQ] =
 
 msbd[mpb.command.NOOP] =
   function(dict, skt, req, key, ext, data)
+    local res =
+      pack.create_response_simple(mpb.command.NOOP,
+                                  mpb.response_status.SUCCESS,
+                                  pack.opaque(req, 'request'))
+    sock_send(skt, res)
   end
 
 msbd[mpb.command.VERSION] =
@@ -63,6 +69,17 @@ msbd[mpb.command.GETK] =
 
 msbd[mpb.command.GETKQ] =
   function(dict, skt, req, key, ext, data)
+    local value = dict.tbl[key]
+    if value then
+      local res =
+        pack.create_response_simple(mpb.command.GETKQ,
+                                    mpb.response_status.SUCCESS,
+                                    pack.opaque(req, 'request'),
+                                    key,
+                                    string.char(0, 0, 0, 0),
+                                    value)
+      sock_send(skt, res)
+    end
   end
 
 msbd[mpb.command.APPEND] =
