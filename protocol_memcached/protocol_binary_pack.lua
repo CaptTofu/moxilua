@@ -19,6 +19,8 @@ end
 -- Multiple return values of network ordered bytes from an input integer x.
 -- Highest order bytes comes first (network byte ordering).
 --
+-- For example, you can: string.char(network_bytes(0x123, 4))
+--
 local function network_bytes(x, num_bytes)
   return unpack(network_bytes_array(x, num_bytes))
 end
@@ -37,6 +39,8 @@ local function network_bytes_to_number(arr, from, num_bytes)
 
   return x
 end
+
+------------------------------------------------------
 
 local function print_bytes(s)
   local n = string.len(s)
@@ -152,6 +156,98 @@ end
 
 ------------------------------------------------------
 
+local function create_request_simple(cmd, key, ext, data, cas)
+   return create_request(cmd, key, ext, 0, 0, data, nil, cas)
+end
+
+------------------------------------------------------
+
+local function recv_message(conn, type)
+  local hdr, err = sock_recv(conn, mpb[type .. "_header_num_bytes"])
+  if not hdr then
+    return hdr, err
+  end
+
+  local fh = mpb[type .. "_header_field"]
+  local fx = mpb[type .. "_header_field_index"]
+
+  if string.byte(hdr, fx.magic) ~= mpb.magic[type] then
+    return nil
+  end
+
+  local opcode = string.byte(hdr, fx.opcode)
+
+  local keylen = network_bytes_to_number(hdr,
+                                         fx.keylen,
+                                         fh.keylen.num_bytes)
+  local extlen = network_bytes_to_number(hdr,
+                                         fx.extlen,
+                                         fh.extlen.num_bytes)
+  local bodylen = network_bytes_to_number(hdr,
+                                          fx.bodylen,
+                                          fh.bodylen.num_bytes)
+
+  local datalen = bodylen - (keylen + extlen)
+  if datalen < 0 then
+    return nil
+  end
+
+  local ext = nil
+  if extlen > 0 then
+    ext, err = sock_recv(conn, extlen)
+    if not ext then
+      return ext, err
+    end
+  end
+
+  local key = nil
+  if keylen > 0 then
+    key, err = sock_recv(conn, keylen)
+    if not key then
+      return key, err
+    end
+  end
+
+  local data = nil
+  if datalen > 0 then
+    data, err = sock_recv(conn, datalen)
+    if not data then
+      return data, err
+    end
+  end
+
+  return hdr, err, key, ext, data
+end
+
+------------------------------------------------------
+
+local function recv_request(conn)
+  return recv_request(conn, 'request')
+end
+
+local function recv_response(conn)
+  return recv_message(conn, 'response')
+end
+
+------------------------------------------------------
+
+local function opcode(hdr, type)
+  local fx = mpb[type .. '_header_field_index']
+
+  return string.byte(hdr, fx.opcode)
+end
+
+local function status(hdr)
+  local fh = mpb.response_header_field
+  local fx = mpb.response_header_field_index
+
+  return network_bytes_to_number(hdr,
+                                 fx.status,
+                                 fh.status.num_bytes)
+end
+
+------------------------------------------------------
+
 mpb.pack = {
   network_bytes           = network_bytes,
   network_bytes_array     = network_bytes_array,
@@ -161,7 +257,16 @@ mpb.pack = {
 
   create_header   = create_header,
   create_request  = create_request,
-  create_response = create_response
+  create_response = create_response,
+
+  create_request_simple = create_request_simple,
+
+  recv_message  = recv_message,
+  recv_request  = recv_request,
+  recv_response = recv_response,
+
+  opcode = opcode,
+  status = status
 }
 
 ------------------------------------------------------
@@ -178,6 +283,11 @@ function TEST_network_bytes()
   assert(b == 0xaa)
   assert(c == 0xbb)
   assert(d == 0xcc)
+
+  a = network_bytes_array(0, 4)
+  assert(#a == 4)
+  s = string.char(unpack(a))
+  assert(string.len(s) == 4)
 
   x = 0
   assert(network_bytes_to_number(network_bytes_array(x, 4), 1, 4) == x)

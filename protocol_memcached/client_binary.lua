@@ -4,10 +4,9 @@ local pack = memcached_protocol_binary.pack
 memcached_client_binary = {
   create_request = pack.create_request,
   create_response = pack.create_response,
+
   get =
     function(conn, value_callback, keys)
-      local head
-      local body
       local reqs = {}
 
       for i = 1, #keys do
@@ -18,52 +17,63 @@ memcached_client_binary = {
 
       local reqs_buf = table.concat(reqs)
 
-      local ok = sock_send(conn, reqs_buf)
+      local ok, err = sock_send(conn, reqs_buf)
       if not ok then
-        return false
+        return ok, err
       end
 
-      local fx = mpb.request_header_field_index
-
       repeat
-        head = sock_recv(conn, mpb.response_header_num_bytes)
-        if head then
-          if string.byte(head, fx.magic) == mpb.magic.RES then
-            return false
-          end
+        local head, err, key, ext, data = pack.recv_response(conn)
+        if not head then
+          return head, err
+        end
 
-          local opcode = string.byte(head, fx.opcode)
-          if opcode == mpb.command.NOOP then
-            return true
-          end
+        local opcode = pack.opcode(head, 'response')
+        if opcode == mpb.command.NOOP then
+          return "END"
+        end
 
-          if opcode == mpb.command.GETKQ then
-            body = sock_recv(conn) -- !!!!
-            if body then
-              if value_callback then
-                value_callback(line, body)
-              end
-            else
-              return false
-            end
-          else
-            if value_callback then
-              value_callback(line, nil)
-            end
+        if opcode == mpb.command.GETKQ then
+          if value_callback then
+            value_callback(head, key, ext, data)
           end
         else
-          return false
+          return false, "unexpected opcode " .. opcode
         end
       until false
     end,
 
   set =
     function(conn, value_callback, args, value)
-      return sock_send_recv(conn,
-                            "set " .. args[1] ..
-                            " 0 0 " .. string.len(value) .. "\r\n" ..
-                            value .. "\r\n",
-                            value_callback)
+      local key = args[1]
+      local flg = args[2]
+      local exp = args[3]
+
+      local flg_bytes = string.char(pack.network_bytes(flg, 4))
+      local exp_bytes = string.char(pack.network_bytes(exp, 4))
+      local ext = flg_bytes .. exp_bytes
+
+      local req = pack.create_request_simple('SET', key, ext, value)
+
+      local ok, err = sock_send(conn, req)
+      if not ok then
+        return ok, err
+      end
+
+      local head, err, key, ext, data = pack.recv_response(conn)
+      if not head then
+        return head, err
+      end
+
+      if pack.opcode(head, 'response') == pack.opcode(req, 'request') then
+        if pack.status(head) == mpb.response_status.SUCCESS then
+          return "STORED"
+        end
+
+        return false, data
+      end
+
+      return nil, "unexpected opcode"
     end,
 
   delete =
@@ -76,19 +86,20 @@ memcached_client_binary = {
   flush_all =
     function(conn, value_callback, args)
       local req = pack.create_request('FLUSH')
-      local res = sock_send_recv(conn, req, value_callback,
-                                 mpb.response_header_num_bytes)
 
-      local fh = mpb.response_header_field
-      local fx = mpb.response_header_field_index
+      local ok, err = sock_send(conn, req)
+      if not ok then
+        return ok, err
+      end
 
-      if res and
-        string.byte(res, fx.magic) == mpb.magic.RES and
-        string.byte(res, fx.opcode) == string.byte(req, fx.opcode) and
-        pack.network_bytes_to_number(res,
-                                     fx.status,
-                                     fh.status.num_bytes) ==
-          mpb.response_status.SUCCESS then
+      local head, err, key, ext, data = pack.recv_response(conn)
+
+      if not head then
+        return head, err
+      end
+
+      if pack.opcode(head, 'response') == pack.opcode(req, 'request') and
+         pack.status(head) == mpb.response_status.SUCCESS then
         return "OK"
       end
 
