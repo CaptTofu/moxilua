@@ -8,7 +8,7 @@ local network_bytes_string_to_number = pru.network_bytes_string_to_number
 
 ------------------------------------------------------
 
-local function create_header(type, cmd,
+local function create_header(kind, cmd,
                              key, ext, datatype, statusOrReserved, data,
                              opaque, cas)
   local keylen = 0
@@ -31,17 +31,22 @@ local function create_header(type, cmd,
   statusOrReserved = statusOrReserved or 0
 
   local a = {}
-  local x = mpb[type .. '_header_field_index']
+  local x = mpb[kind .. '_header_field_index']
 
-  a[x.magic]  = mpb.magic[type]
-  a[x.opcode] = mpb.command[cmd]
+  a[x.magic] = mpb.magic[kind]
+
+  if type(cmd) == 'number' then
+    a[x.opcode] = cmd
+  else
+    a[x.opcode] = mpb.command[cmd]
+  end
 
   a[x.keylen], a[x.keylen + 1] = network_bytes(keylen, 2)
 
   a[x.extlen]   = extlen or 0
   a[x.datatype] = datatype or 0
 
-  if type == 'request' then
+  if kind == 'request' then
     a[x.reserved], a[x.reserved + 1] = network_bytes(statusOrReserved, 2)
   else
     a[x.status], a[x.status + 1] = network_bytes(statusOrReserved, 2)
@@ -113,16 +118,16 @@ end
 
 ------------------------------------------------------
 
-local function recv_message(conn, type)
-  local hdr, err = sock_recv(conn, mpb[type .. "_header_num_bytes"])
+local function recv_message(conn, kind)
+  local hdr, err = sock_recv(conn, mpb[kind .. "_header_num_bytes"])
   if not hdr then
     return hdr, err
   end
 
-  local fh = mpb[type .. "_header_field"]
-  local fx = mpb[type .. "_header_field_index"]
+  local fh = mpb[kind .. "_header_field"]
+  local fx = mpb[kind .. "_header_field_index"]
 
-  if string.byte(hdr, fx.magic) ~= mpb.magic[type] then
+  if string.byte(hdr, fx.magic) ~= mpb.magic[kind] then
     return false, "unexpected magic " .. string.byte(hdr, fx.magic)
   end
 
@@ -183,8 +188,8 @@ end
 
 ------------------------------------------------------
 
-local function opcode(hdr, type)
-  local fx = mpb[type .. '_header_field_index']
+local function opcode(hdr, kind)
+  local fx = mpb[kind .. '_header_field_index']
 
   return string.byte(hdr, fx.opcode)
 end

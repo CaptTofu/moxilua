@@ -45,6 +45,12 @@ apo.spawn(upstream_accept, server,
           memcached_server_ascii_proxy,
           memcached_pool({ "127.0.0.1:11311" }))
 
+-- Start binary server.
+server = socket.bind(host, 11411)
+apo.spawn(upstream_accept, server,
+          upstream_session_memcached_binary,
+          memcached_server_binary_dict, dict)
+
 print("loop")
 
 while true do
