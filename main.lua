@@ -9,6 +9,7 @@ require('protocol_memcached/client')
 require('protocol_memcached/server')
 require('protocol_memcached/server_ascii_dict')
 require('protocol_memcached/server_ascii_proxy')
+require('protocol_memcached/server_binary_dict')
 require('protocol_memcached/pool')
 
 print("start")
