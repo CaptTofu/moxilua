@@ -6,7 +6,7 @@ asock = require('actor_socket')
 require('util')
 
 require('protocol_memcached/client')
-require('protocol_memcached/server_ascii')
+require('protocol_memcached/server')
 require('protocol_memcached/server_ascii_dict')
 require('protocol_memcached/server_ascii_proxy')
 require('protocol_memcached/pool')
