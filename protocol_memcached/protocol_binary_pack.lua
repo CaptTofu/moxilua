@@ -31,8 +31,10 @@ local function create_header(type, cmd,
     bodylen = string.len(body)
   end
 
+  statusOrReserved = statusOrReserved or 0
+
   local a = {}
-  local x = mpb[type + '_header_field_index']
+  local x = mpb[type .. '_header_field_index']
 
   a[x.magic]  = mpb.magic[type]
   a[x.opcode] = mpb.command[cmd]
@@ -41,8 +43,6 @@ local function create_header(type, cmd,
 
   a[x.extlen]   = extlen or 0
   a[x.datatype] = datatype or 0
-
-  statusOrReserved = statusOrReserved or 0
 
   if type == 'request' then
     a[x.reserved], a[x.reserved + 1] = network_bytes(statusOrReserved, 2)

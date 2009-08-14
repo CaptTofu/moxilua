@@ -24,13 +24,13 @@ if _G.sock_recv == nil and
     return skt:send(data, from, to)
   end
 
-  sock_send_recv = function(skt, data, recv_callback)
+  sock_send_recv = function(skt, data, recv_callback, pattern)
     local ok = sock_send(skt, data)
     if not ok then
       return nil
     end
 
-    local rv = sock_recv(skt)
+    local rv = sock_recv(skt, pattern or "*l")
     if rv and recv_callback then
       recv_callback(rv)
     end

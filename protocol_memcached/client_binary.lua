@@ -75,9 +75,8 @@ memcached_client_binary = {
 
   flush_all =
     function(conn, value_callback, args)
-      return sock_send_recv(conn,
-                            "flush_all\r\n",
-                            value_callback)
+      local req = pack.create_request('FLUSH')
+      return sock_send_recv(conn, req, value_callback)
     end
 }
 
