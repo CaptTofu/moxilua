@@ -2,6 +2,7 @@ memcached_server_binary_dict = {}
 
 local msbd = memcached_server_binary_dict
 local mpb  = memcached_protocol_binary
+local pack = mpb.pack
 
 msbd[mpb.command.GET] =
   function(dict, skt, req, key, ext, data)
@@ -37,6 +38,10 @@ msbd[mpb.command.QUIT] =
 
 msbd[mpb.command.FLUSH] =
   function(dict, skt, req, key, ext, data)
+    dict.tbl = {}
+    pack.create_response_simple(mpb.command.FLUSH,
+                                mpb.response_status.SUCCESS,
+                                pack.opaque(req, 'request'))
   end
 
 msbd[mpb.command.GETQ] =

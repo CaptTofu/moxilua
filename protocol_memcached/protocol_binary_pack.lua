@@ -116,6 +116,10 @@ local function create_request_simple(cmd, key, ext, data, cas)
    return create_request(cmd, key, ext, 0, 0, data, nil, cas)
 end
 
+local function create_response_simple(cmd, status, opaque, key, ext, data, cas)
+    pack.create_response(cmd, key, ext, 0, status, data, opaque, cas)
+end
+
 ------------------------------------------------------
 
 local function recv_message(conn, kind)
@@ -190,17 +194,33 @@ end
 
 local function opcode(hdr, kind)
   local fx = mpb[kind .. '_header_field_index']
-
   return string.byte(hdr, fx.opcode)
 end
 
-local function status(hdr)
-  local fh = mpb.response_header_field
-  local fx = mpb.response_header_field_index
+local function opaque(hdr, kind)
+  local fo = mpb[kind .. '_header_field'].opaque
+  return string.sub(hdr, fo.index, fo.index + fo.num_bytes - 1)
+end
 
-  return network_bytes_string_to_number(hdr,
-                                        fx.status,
-                                        fh.status.num_bytes)
+local function field_to_number(hdr, kind, field)
+  local fo = mpb[kind .. '_header_field'][field]
+  return network_bytes_string_to_number(hdr, fo.index, fo.num_bytes)
+end
+
+local function keylen(hdr, kind)
+  return field_to_number(hdr, kind, 'keylen')
+end
+
+local function extlen(hdr, kind)
+  return field_to_number(hdr, kind, 'extlen')
+end
+
+local function bodylen(hdr, kind)
+  return field_to_number(hdr, kind, 'bodylen')
+end
+
+local function status(hdr)
+  return field_to_number(hdr, 'response', 'status')
 end
 
 ------------------------------------------------------
@@ -240,7 +260,8 @@ mpb.pack = {
   create_request  = create_request,
   create_response = create_response,
 
-  create_request_simple = create_request_simple,
+  create_request_simple  = create_request_simple,
+  create_response_simple = create_response_simple,
 
   recv_message  = recv_message,
   recv_request  = recv_request,
@@ -248,7 +269,40 @@ mpb.pack = {
 
   send_recv = send_recv,
 
-  opcode = opcode,
-  status = status
+  opcode  = opcode,
+  status  = status,
+  opaque  = opaque,
+  keylen  = keylen,
+  extlen  = extlen,
+  bodylen = bodylen
 }
 
+------------------------------------------------------
+
+function TEST_pack()
+  fx = mpb.request_header_field
+  assert(fx)
+
+  x = create_request_simple(111)
+  assert(x)
+  assert(string.len(x) == 24)
+  assert(opcode(x, 'request') == 111)
+  assert(status(x) == 0)
+  o = opaque(x, 'request')
+  assert(string.char(0, 0, 0, 0) == o)
+  assert(keylen(x, 'request') == 0)
+  assert(extlen(x, 'request') == 0)
+  assert(bodylen(x, 'request') == 0)
+
+  x = create_request_simple(123, "hello", "goodbye", "you", 0xdeadbeef)
+  assert(x)
+  assert(string.len(x) == 24 + 15)
+  assert(opcode(x, 'request') == 123)
+  assert(status(x) == 0)
+  o = opaque(x, 'request')
+  assert(string.char(0, 0, 0, 0) == o)
+  o = string.sub(x, fx.keylen.index, fx.keylen.index + fx.keylen.num_bytes - 1)
+  assert(keylen(x, 'request') == 5)
+  assert(extlen(x, 'request') == 7)
+  assert(bodylen(x, 'request') == 15)
+end
