@@ -120,6 +120,7 @@ function TESTALL()
       v()
     end
   end
+  print("TESTALL - done")
 end
 
 function TEST_array_iter()
