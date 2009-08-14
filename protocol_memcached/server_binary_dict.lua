@@ -10,6 +10,12 @@ msbd[mpb.command.GET] =
 
 msbd[mpb.command.SET] =
   function(dict, skt, req, key, ext, data)
+    dict.tbl[key] = data
+    local res =
+      pack.create_response_simple(mpb.command.SET,
+                                  mpb.response_status.SUCCESS,
+                                  pack.opaque(req, 'request'))
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.ADD] =
@@ -22,6 +28,12 @@ msbd[mpb.command.REPLACE] =
 
 msbd[mpb.command.DELETE] =
   function(dict, skt, req, key, ext, data)
+    dict.tbl[key] = nil
+    local res =
+      pack.create_response_simple(mpb.command.DELETE,
+                                  mpb.response_status.SUCCESS,
+                                  pack.opaque(req, 'request'))
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.INCREMENT] =
@@ -43,7 +55,7 @@ msbd[mpb.command.FLUSH] =
       pack.create_response_simple(mpb.command.FLUSH,
                                   mpb.response_status.SUCCESS,
                                   pack.opaque(req, 'request'))
-    sock_send(skt, res)
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.GETQ] =
@@ -56,7 +68,7 @@ msbd[mpb.command.NOOP] =
       pack.create_response_simple(mpb.command.NOOP,
                                   mpb.response_status.SUCCESS,
                                   pack.opaque(req, 'request'))
-    sock_send(skt, res)
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.VERSION] =
@@ -78,8 +90,9 @@ msbd[mpb.command.GETKQ] =
                                     key,
                                     string.char(0, 0, 0, 0),
                                     value)
-      sock_send(skt, res)
+      return sock_send(skt, res)
     end
+    return true
   end
 
 msbd[mpb.command.APPEND] =
