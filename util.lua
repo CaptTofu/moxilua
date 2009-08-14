@@ -1,27 +1,32 @@
-function sock_recv(skt, pattern)
-  return asock.recv(apo.self_address(), skt, pattern)
-end
-
-function sock_send(skt, data, from, to)
-  return asock.send(apo.self_address(), skt, data, from, to)
-end
-
-function send_recv(self_addr, skt, msg, recv_callback)
-  local ok = asock.send(self_addr, skt, msg)
-  if not ok then
-    return nil
+if _G.sock_recv == nil and
+   _G.sock_send == nil and
+   _G.sock_send_recv == nil and
+   _G.asock then
+  function sock_recv(skt, pattern)
+    return asock.recv(apo.self_address(), skt, pattern)
   end
 
-  local rv = asock.recv(self_addr, skt)
-  if rv and recv_callback then
-    recv_callback(rv)
+  function sock_send(skt, data, from, to)
+    return asock.send(apo.self_address(), skt, data, from, to)
   end
 
-  return rv
-end
+  function asock_send_recv(self_addr, skt, msg, recv_callback, pattern)
+    local ok = asock.send(self_addr, skt, msg)
+    if not ok then
+      return nil
+    end
 
-function sock_send_recv(skt, data, recv_callback)
-  return send_recv(apo.self_address(), skt, data, recv_callback)
+    local rv = asock.recv(self_addr, skt, pattern or "*l")
+    if rv and recv_callback then
+      recv_callback(rv)
+    end
+
+    return rv
+  end
+
+  function sock_send_recv(skt, data, recv_callback)
+    return asock_send_recv(apo.self_address(), skt, data, recv_callback)
+  end
 end
 
 ----------------------------------------
