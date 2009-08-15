@@ -38,7 +38,7 @@ memcached_client_binary = {
 
         if opcode == mpb.command.GETKQ then
           if recv_callback then
-            recv_callback(head, err, key, ext, data)
+            recv_callback(head, {key, ext, data})
           end
         else
           return false, "unexpected opcode " .. opcode

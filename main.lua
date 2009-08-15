@@ -10,6 +10,7 @@ require('protocol_memcached/server')
 require('protocol_memcached/server_ascii_dict')
 require('protocol_memcached/server_ascii_proxy')
 require('protocol_memcached/server_binary_dict')
+require('protocol_memcached/server_binary_proxy')
 require('protocol_memcached/pool')
 
 print("start")
@@ -44,13 +45,20 @@ server = socket.bind(host, 11322)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii,
           memcached_server_ascii_proxy,
-          memcached_pool({ "127.0.0.1:11311" }))
+          memcached_pool_ascii({ "127.0.0.1:11311" }))
 
 -- Start binary server.
 server = socket.bind(host, 11411)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
           memcached_server_binary_dict, dict)
+
+-- Start binary proxy to binary self.
+server = socket.bind(host, 11422)
+apo.spawn(upstream_accept, server,
+          upstream_session_memcached_binary,
+          memcached_server_binary_proxy,
+          memcached_pool_binary({ "127.0.0.1:11411" }))
 
 print("loop")
 

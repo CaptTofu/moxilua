@@ -239,7 +239,7 @@ local function send_recv(conn, req, recv_callback, success_value)
   end
 
   if recv_callback then
-    recv_callback(head, err, key, ext, data)
+    recv_callback(head, {key, ext, data})
   end
 
   if opcode(head, 'response') == opcode(req, 'request') then

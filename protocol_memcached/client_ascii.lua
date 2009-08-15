@@ -27,7 +27,9 @@ memcached_client_ascii = {
           end
         end
 
-        recv_callback(line, body)
+        if recv_callback then
+          recv_callback(line, body)
+        end
       until false
     end,
 

@@ -68,7 +68,7 @@ memcached_server_ascii_proxy = {
       pool.each(
         function(downstream_addr)
           apo.send(downstream_addr, apo.self_address(),
-                   nil, "flush_all", {key})
+                   nil, "flush_all", {})
           n = n + 1
         end)
 
