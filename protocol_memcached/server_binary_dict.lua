@@ -4,6 +4,8 @@ local msbd = memcached_server_binary_dict
 local mpb  = memcached_protocol_binary
 local pack = mpb.pack
 
+local SUCCESS = mpb.response_stats.SUCCESS
+
 msbd[mpb.command.GET] =
   function(dict, skt, req, key, ext, data)
   end
@@ -12,8 +14,7 @@ msbd[mpb.command.SET] =
   function(dict, skt, req, key, ext, data)
     dict.tbl[key] = data
     local res =
-      pack.create_response_simple(mpb.command.SET,
-                                  mpb.response_status.SUCCESS,
+      pack.create_response_simple(mpb.command.SET, SUCCESS,
                                   pack.opaque(req, 'request'))
     return sock_send(skt, res)
   end
@@ -30,8 +31,7 @@ msbd[mpb.command.DELETE] =
   function(dict, skt, req, key, ext, data)
     dict.tbl[key] = nil
     local res =
-      pack.create_response_simple(mpb.command.DELETE,
-                                  mpb.response_status.SUCCESS,
+      pack.create_response_simple(mpb.command.DELETE, SUCCESS,
                                   pack.opaque(req, 'request'))
     return sock_send(skt, res)
   end
@@ -52,8 +52,7 @@ msbd[mpb.command.FLUSH] =
   function(dict, skt, req, key, ext, data)
     dict.tbl = {}
     local res =
-      pack.create_response_simple(mpb.command.FLUSH,
-                                  mpb.response_status.SUCCESS,
+      pack.create_response_simple(mpb.command.FLUSH, SUCCESS,
                                   pack.opaque(req, 'request'))
     return sock_send(skt, res)
   end
@@ -65,8 +64,7 @@ msbd[mpb.command.GETQ] =
 msbd[mpb.command.NOOP] =
   function(dict, skt, req, key, ext, data)
     local res =
-      pack.create_response_simple(mpb.command.NOOP,
-                                  mpb.response_status.SUCCESS,
+      pack.create_response_simple(mpb.command.NOOP, SUCCESS,
                                   pack.opaque(req, 'request'))
     return sock_send(skt, res)
   end
@@ -84,8 +82,7 @@ msbd[mpb.command.GETKQ] =
     local value = dict.tbl[key]
     if value then
       local res =
-        pack.create_response_simple(mpb.command.GETKQ,
-                                    mpb.response_status.SUCCESS,
+        pack.create_response_simple(mpb.command.GETKQ, SUCCESS,
                                     pack.opaque(req, 'request'),
                                     key,
                                     string.char(0, 0, 0, 0),
