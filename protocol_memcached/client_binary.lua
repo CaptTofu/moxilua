@@ -77,3 +77,21 @@ memcached_client_binary = {
     end
 }
 
+--------------------------------------------------------
+
+-- Catch all functions for pure-binary clients aware of binary opcodes.
+--
+local function binary_vocal_cmd(conn, recv_callback, args)
+end
+
+local function binary_quiet_cmd(conn, recv_callback, args)
+end
+
+for name, opcode in pairs(memcached_protocol_binary.command_vocal) do
+  memcached_client_binary[opcode] = binary_vocal_cmd
+end
+
+for name, opcode in pairs(memcached_protocol_binary.command_quiet) do
+  memcached_client_binary[opcode] = binary_quiet_cmd
+end
+
