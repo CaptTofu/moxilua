@@ -16,6 +16,7 @@ local last_addr = 0
 
 local map_addr_to_coro = {} -- table, key'ed by addr.
 local map_coro_to_addr = {} -- table, key'ed by coro.
+local map_coro_to_data = {} -- table, key'ed by coro, for user data.
 
 local envelopes = {}
 
@@ -54,6 +55,7 @@ local function unregister(addr)
   if coro then
     map_addr_to_coro[addr] = nil
     map_coro_to_addr[coro] = nil
+    map_coro_to_data[coro] = nil
   end
 end
 
@@ -81,6 +83,18 @@ end
 
 local function self_address()
   return coroutine_address(coroutine.running())
+end
+
+----------------------------------------
+
+local function user_data()
+  local c = coroutine.running()
+  local d = map_coro_to_data[c]
+  if not d then
+    d = {}
+    map_coro_to_data[c] = d
+  end
+  return d
 end
 
 ----------------------------------------
@@ -197,6 +211,7 @@ return {
   step       = step,
   spawn      = spawn,
   spawn_with = spawn_with,
+  user_data  = user_data,
   register   = register,
   unregister = unregister,
   is_registered     = is_registered,
