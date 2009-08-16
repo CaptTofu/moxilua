@@ -73,12 +73,14 @@ function expected(...)
     expect = {expect}
   end
 
-  p("--------------")
-  p("expect")
-  pa(expect)
+  if false then
+    p("--------------")
+    p("expect")
+    pa(expect)
 
-  p("actual")
-  pa(got_list)
+    p("actual")
+    pa(got_list)
+  end
 
   tree_match(expect, got_list)
 end

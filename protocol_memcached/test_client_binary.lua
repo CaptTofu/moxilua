@@ -16,7 +16,7 @@ p("connected", host, port, c)
 
 fresh()
 assert(client.flush_all(c, got) == "OK")
-expected(".+")
+expected({".+", {}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
@@ -24,43 +24,43 @@ expected()
 
 fresh()
 assert(client.set(c, got, {"a", 0, 0}, "hello") == "STORED")
-expected(".+")
+expected({".+", {}})
 
 fresh()
 assert(client.get(c, got, {"a"}) == "END")
-expected({".+", nil, "a", ".+", "hello"})
+expected({".+", {"a", ".+", "hello"}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", nil, "a", ".+", "hello"})
+expected({".+", {"a", ".+", "hello"}})
 
 fresh()
 assert(client.set(c, got, {"b", 0, 0}, "world"))
-expected(".+")
+expected({".+", {}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", nil, "a", ".+", "hello"},
-         {".+", nil, "b", ".+", "world"})
+expected({".+", {"a", ".+", "hello"}},
+         {".+", {"b", ".+", "world"}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c", "a", "b", "c"}) == "END")
-expected({".+", nil, "a", ".+", "hello"},
-         {".+", nil, "b", ".+", "world"},
-         {".+", nil, "a", ".+", "hello"},
-         {".+", nil, "b", ".+", "world"})
+expected({".+", {"a", ".+", "hello"}},
+         {".+", {"b", ".+", "world"}},
+         {".+", {"a", ".+", "hello"}},
+         {".+", {"b", ".+", "world"}})
 
 fresh()
 assert(client.delete(c, got, {"b"}) == "DELETED")
-expected(".+")
+expected({".+", {}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", nil, "a", ".+", "hello"})
+expected({".+", {"a", ".+", "hello"}})
 
 fresh()
 assert(client.flush_all(c, got) == "OK")
-expected(".+")
+expected({".+", {}})
 
 fresh()
 assert(client.get(c, got, {"a", "b", "c"}) == "END")
