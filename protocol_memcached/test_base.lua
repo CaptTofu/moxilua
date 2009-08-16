@@ -10,12 +10,18 @@ function printa(a, prefix)
   prefix = prefix or ""
   if type(a) == 'table' then
     for i, v in pairs(a) do
-      if type(v) == 'table' then
-        p(prefix .. i .. ' {')
-        printa(v, prefix .. '  ')
-        p(prefix .. '}')
-      else
-        p(prefix .. i, v)
+      if i ~= 'n' then
+        if type(v) == 'table' then
+          if #v == 0 then
+            p(prefix .. i .. ' {}')
+          else
+            p(prefix .. i .. ' {')
+            printa(v, prefix .. '  ')
+            p(prefix .. '}')
+          end
+        else
+          p(prefix .. i .. ' ' .. v)
+        end
       end
     end
   elseif a == nil then
