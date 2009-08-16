@@ -228,6 +228,8 @@ end
 -- Sends a single request and receives a single response.
 --
 local function send_recv(conn, req, recv_callback, success_value)
+  success_value = success_value or true
+
   local ok, err = sock_send(conn, req)
   if not ok then
     return ok, err
@@ -244,7 +246,7 @@ local function send_recv(conn, req, recv_callback, success_value)
 
   if opcode(head, 'response') == opcode(req, 'request') then
     if status(head) == mpb.response_status.SUCCESS then
-      return success_value
+      return success_value, nil, key, ext, data
     end
 
     return false, data

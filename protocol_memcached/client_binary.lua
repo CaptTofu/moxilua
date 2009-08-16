@@ -81,10 +81,20 @@ memcached_client_binary = {
 
 -- Catch all functions for pure-binary clients aware of binary opcodes.
 --
-local function binary_vocal_cmd(conn, recv_callback, args)
+local function binary_vocal_cmd(conn, recv_callback, args, data)
+  local req = args[1]
+  local key = args[2]
+  local ext = args[3]
+  local msg = req .. (ext or "") .. (key or "") .. (data or "")
+  return pack.send_recv(conn, msg, recv_callback, true)
 end
 
-local function binary_quiet_cmd(conn, recv_callback, args)
+local function binary_quiet_cmd(conn, recv_callback, args, data)
+  local req = args[1]
+  local key = args[2]
+  local ext = args[3]
+  local msg = req .. (ext or "") .. (key or "") .. (data or "")
+  return sock_send(conn, msg)
 end
 
 for name, opcode in pairs(memcached_protocol_binary.command_vocal) do
