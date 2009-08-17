@@ -1,3 +1,6 @@
+-- Need a noreply version of client_binary api.
+-- Also, need to handle opaque's right.
+--
 memcached_server_binary_proxy = {}
 
 local msbp = memcached_server_binary_proxy
@@ -62,7 +65,7 @@ msbp[mpb.command.FLUSH] =
     pool.each(
       function(downstream_addr)
         apo.send(downstream_addr, apo.self_address(),
-                 nil, mpb.command.FLUSH, {req, key, ext}, data)
+                 false, mpb.command.FLUSH, {req, key, ext}, data)
         n = n + 1
       end)
 
@@ -88,7 +91,7 @@ msbp[mpb.command.NOOP] =
     pool.each(
       function(downstream_addr)
         apo.send(downstream_addr, apo.self_address(),
-                 nil, mpb.command.NOOP, {req, key, ext}, data)
+                 false, mpb.command.NOOP, {req, key, ext}, data)
         n = n + 1
       end)
 
