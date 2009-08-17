@@ -7,13 +7,17 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, args, value = apo.recv()
+        local sess_addr, uconn, cmd, args, value, recv_callback = apo.recv()
 
         local ok = true
 
         local function recv_after_wrapper(head, body)
           if uconn then
             ok = ok and recv_after(uconn, head, body)
+          end
+
+          if recv_callback then
+            recv_callback(head, body)
           end
         end
 

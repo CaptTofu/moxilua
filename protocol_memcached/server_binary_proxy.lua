@@ -85,13 +85,26 @@ msbp[mpb.command.GETQ] =
 
 msbp[mpb.command.NOOP] =
   function(pool, skt, req, key, ext, data)
-    -- TODO: Need pool cork/uncork.
-    --
+    local function skt_send(head, body)
+      if pack.opcode(head, 'response') == mpb.command.NOOP then
+        return
+      end
+
+      local key  = body[1]
+      local ext  = body[2]
+      local data = body[3]
+
+      local msg = head .. (ext or "") .. (key or "") .. (data or "")
+
+      return sock_send(skt, msg)
+    end
+
     local n = 0
     pool.each(
       function(downstream_addr)
         apo.send(downstream_addr, apo.self_address(),
-                 false, mpb.command.NOOP, {req, key, ext}, data)
+                 false, mpb.command.NOOP, {req, key, ext}, data,
+                 skt_send)
         n = n + 1
       end)
 

@@ -86,7 +86,37 @@ local function binary_vocal_cmd(conn, recv_callback, args, data)
   local key = args[2]
   local ext = args[3]
   local msg = req .. (ext or "") .. (key or "") .. (data or "")
-  return pack.send_recv(conn, msg, recv_callback, true)
+
+local r = pack.opcode(req, 'request')
+  local ok, err = sock_send(conn, msg)
+  if not ok then
+    return ok, err
+  end
+
+  repeat
+    local head, err, key, ext, data = pack.recv_response(conn)
+    if not head then
+      return head, err
+    end
+
+    if recv_callback then
+      recv_callback(head, {key, ext, data})
+    end
+
+    local o = pack.opcode(head, 'response')
+    if o == pack.opcode(req, 'request') then
+      if pack.status(head) == mpb.response_status.SUCCESS then
+        return true, nil, key, ext, data
+      end
+
+      return false, data
+    end
+
+    if o ~= mpb.command.GETKQ and
+       o ~= mpb.command.GETQ then
+      return false, "unexpected opcode " .. o
+    end
+  until false
 end
 
 local function binary_quiet_cmd(conn, recv_callback, args, data)
@@ -94,8 +124,11 @@ local function binary_quiet_cmd(conn, recv_callback, args, data)
   local key = args[2]
   local ext = args[3]
   local msg = req .. (ext or "") .. (key or "") .. (data or "")
+
   return sock_send(conn, msg)
 end
+
+--------------------------------------------------------
 
 for name, opcode in pairs(memcached_protocol_binary.command_vocal) do
   memcached_client_binary[opcode] = binary_vocal_cmd
