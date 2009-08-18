@@ -11,7 +11,7 @@ local function match(line, ...)
   return false
 end
 
-for line in io.lines("protocol_binary.h") do
+for line in io.lines("protocol_memcached/protocol_binary.h") do
   -- Strip comments, macros defs.
   if line ~= "" and
      not match(line,
