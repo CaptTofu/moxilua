@@ -7,7 +7,7 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, req, args, recv_callback = apo.recv()
+        local sess_addr, uconn, cmd, args, recv_callback = apo.recv()
 
         local ok = true
 
@@ -24,7 +24,6 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
         local handler = client_specs[cmd]
         if handler then
           args = args or {}
-          args.req = req
 
           if not handler(dconn, recv_after_wrapper, args) then
             dconn:close()

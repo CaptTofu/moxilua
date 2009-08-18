@@ -15,10 +15,12 @@ msbp[mpb.command.GET] =
 
 msbp[mpb.command.SET] =
   function(pool, skt, req, args)
+    args.req = req
+
     local downstream_addr = pool.choose(args.key)
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.SET, req, args)
+               skt, mpb.command.SET, args)
       apo.recv()
       return true
     end
@@ -36,10 +38,12 @@ msbp[mpb.command.REPLACE] =
 
 msbp[mpb.command.DELETE] =
   function(pool, skt, req, args)
+    args.req = req
+
     local downstream_addr = pool.choose(args.key)
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.DELETE, req, args)
+               skt, mpb.command.DELETE, args)
       apo.recv()
       return true
     end
@@ -61,11 +65,13 @@ msbp[mpb.command.QUIT] =
 
 msbp[mpb.command.FLUSH] =
   function(pool, skt, req, args)
+    args.req = req
+
     local n = 0
     pool.each(
       function(downstream_addr)
         apo.send(downstream_addr, apo.self_address(),
-                 false, mpb.command.FLUSH, req, args)
+                 false, mpb.command.FLUSH, args)
         n = n + 1
       end)
 
@@ -100,11 +106,13 @@ msbp[mpb.command.NOOP] =
       return sock_send(skt, msg)
     end
 
+    args.req = req
+
     local n = 0
     pool.each(
       function(downstream_addr)
         apo.send(downstream_addr, apo.self_address(),
-                 false, mpb.command.NOOP, req, args,
+                 false, mpb.command.NOOP, args,
                  skt_send)
         n = n + 1
       end)
@@ -131,10 +139,12 @@ msbp[mpb.command.GETK] =
 
 msbp[mpb.command.GETKQ] =
   function(pool, skt, req, args)
+    args.req = req
+
     local downstream_addr = pool.choose(args.key)
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.GETKQ, req, args)
+               skt, mpb.command.GETKQ, args)
       apo.recv()
     end
     return true

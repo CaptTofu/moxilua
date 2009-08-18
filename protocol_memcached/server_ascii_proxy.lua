@@ -6,7 +6,7 @@ memcached_server_ascii_proxy = {
       local n = 0
       for downstream_addr, keys in pairs(groups) do
         apo.send(downstream_addr, apo.self_address(),
-                 skt, "get", "get", { keys = keys })
+                 skt, "get", { keys = keys })
         n = n + 1
       end
 
@@ -35,7 +35,7 @@ memcached_server_ascii_proxy = {
           local downstream_addr = pool.choose(key)
           if downstream_addr then
             apo.send(downstream_addr, apo.self_address(),
-                     skt, "set", "set", {
+                     skt, "set", {
                        key    = key,
                        flag   = flag,
                        expire = expire,
@@ -57,7 +57,7 @@ memcached_server_ascii_proxy = {
         local downstream_addr = pool.choose(key)
         if downstream_addr then
           apo.send(downstream_addr, apo.self_address(),
-                   skt, "delete", "delete", { key = key })
+                   skt, "delete", { key = key })
           apo.recv()
           return true
         end
@@ -72,7 +72,7 @@ memcached_server_ascii_proxy = {
       pool.each(
         function(downstream_addr)
           apo.send(downstream_addr, apo.self_address(),
-                   nil, "flush_all", "flush_all", {})
+                   false, "flush_all", {})
           n = n + 1
         end)
 
