@@ -5,16 +5,13 @@ local pack = memcached_protocol_binary.pack
 local network_bytes = pru.network_bytes
 
 memcached_client_binary = {
-  create_request = pack.create_request,
-  create_response = pack.create_response,
-
   get =
     function(conn, recv_callback, args)
       local reqs = {}
       local keys = args.keys
 
       for i = 1, #keys do
-        reqs[#reqs + 1] = pack.create_request('GETKQ', keys[i])
+        reqs[#reqs + 1] = pack.create_request('GETKQ', { key = keys[i] })
       end
 
       reqs[#reqs + 1] = pack.create_request('NOOP')
@@ -57,7 +54,8 @@ memcached_client_binary = {
       local expire_bytes = string.char(network_bytes(expire, 4))
       local ext = flag_bytes .. expire_bytes
 
-      local req = pack.create_request_simple('SET', key, ext, args.data)
+      local req =
+        pack.create_request('SET', { key = key, ext = ext, data = args.data })
 
       return pack.send_recv(conn, req,
                             recv_callback, "STORED")
@@ -66,7 +64,7 @@ memcached_client_binary = {
   delete =
     function(conn, recv_callback, args)
       return pack.send_recv(conn,
-                            pack.create_request('DELETE', args.key),
+                            pack.create_request('DELETE', { key = args.key }),
                             recv_callback, "DELETED")
     end,
 

@@ -14,8 +14,10 @@ msbd[mpb.command.SET] =
   function(dict, skt, req, args)
     dict.tbl[args.key] = args.data
     local res =
-      pack.create_response_simple(mpb.command.SET, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.SET, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 
@@ -31,8 +33,10 @@ msbd[mpb.command.DELETE] =
   function(dict, skt, req, args)
     dict.tbl[args.key] = nil
     local res =
-      pack.create_response_simple(mpb.command.DELETE, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.DELETE, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 
@@ -52,8 +56,10 @@ msbd[mpb.command.FLUSH] =
   function(dict, skt, req, args)
     dict.tbl = {}
     local res =
-      pack.create_response_simple(mpb.command.FLUSH, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.FLUSH, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 
@@ -64,8 +70,10 @@ msbd[mpb.command.GETQ] =
 msbd[mpb.command.NOOP] =
   function(dict, skt, req, args)
     local res =
-      pack.create_response_simple(mpb.command.NOOP, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.NOOP, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 
@@ -82,11 +90,13 @@ msbd[mpb.command.GETKQ] =
     local data = dict.tbl[args.key]
     if data then
       local res =
-        pack.create_response_simple(mpb.command.GETKQ, SUCCESS,
-                                    pack.opaque(req, 'request'),
-                                    args.key,
-                                    string.char(0, 0, 0, 0),
-                                    data)
+        pack.create_response(mpb.command.GETKQ, {
+          status = SUCCESS,
+          opaque = pack.opaque(req, 'request'),
+          key    = args.key,
+          ext    = string.char(0, 0, 0, 0),
+          data   = data
+        })
       return sock_send(skt, res)
     end
     return true

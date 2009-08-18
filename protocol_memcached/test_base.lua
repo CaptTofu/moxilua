@@ -83,7 +83,7 @@ function expected(...)
     expect = {expect}
   end
 
-  if true then
+  if false then
     p("--------------")
     p("expect")
     pa(expect)

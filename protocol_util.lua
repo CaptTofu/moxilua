@@ -60,10 +60,10 @@ local function print_bytes(s)
   local i = 1
   while i < n do
     print("  " ..
-          string.format('x%2x ', string.byte(s, i + 0)) ..
-          string.format('x%2x ', string.byte(s, i + 1)) ..
-          string.format('x%2x ', string.byte(s, i + 2)) ..
-          string.format('x%2x ', string.byte(s, i + 3)))
+          string.format('x%2x ', string.byte(s, i + 0) or 0) ..
+          string.format('x%2x ', string.byte(s, i + 1) or 0) ..
+          string.format('x%2x ', string.byte(s, i + 2) or 0) ..
+          string.format('x%2x ', string.byte(s, i + 3) or 0))
     i = i + 4
   end
 end

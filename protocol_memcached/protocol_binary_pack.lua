@@ -8,37 +8,39 @@ local network_bytes_string_to_number = pru.network_bytes_string_to_number
 
 ------------------------------------------------------
 
-local function create_header(kind, cmd,
-                             key, ext, datatype, statusOrReserved, data,
-                             opaque, cas)
+local function create_header(kind, opcode, args)
+  args = args or {}
+
   local keylen = 0
-  if key then
-    keylen = string.len(key)
+  if args.key then
+    keylen = string.len(args.key)
   end
 
   local extlen = 0
-  if ext then
-    extlen = string.len(ext)
+  if args.ext then
+    extlen = string.len(args.ext)
   end
 
   local datalen = 0
-  if data then
-    datalen = string.len(data)
+  if args.data then
+    datalen = string.len(args.data)
   end
 
   bodylen = keylen + extlen + datalen
 
-  statusOrReserved = statusOrReserved or 0
+  local statusOrReserved =
+    args.statusOrReserved or
+    args.status or args.reserved or 0
 
   local a = {}
   local x = mpb[kind .. '_header_field_index']
 
   a[x.magic] = mpb.magic[kind]
 
-  if type(cmd) == 'number' then
-    a[x.opcode] = cmd
+  if type(opcode) == 'number' then
+    a[x.opcode] = opcode
   else
-    a[x.opcode] = mpb.command[cmd]
+    a[x.opcode] = mpb.command[opcode]
   end
 
   a[x.keylen], a[x.keylen + 1] = network_bytes(keylen, 2)
@@ -55,6 +57,7 @@ local function create_header(kind, cmd,
   a[x.bodylen], a[x.bodylen + 1], a[x.bodylen + 2], a[x.bodylen + 3] =
     network_bytes(bodylen, 4)
 
+  local opaque = args.opaque
   if opaque then
     a[x.opaque + 0] = string.byte(opaque, 1)
     a[x.opaque + 1] = string.byte(opaque, 2)
@@ -67,6 +70,7 @@ local function create_header(kind, cmd,
     a[x.opaque + 3] = 0
   end
 
+  local cas = args.cas
   if cas then
     a[x.cas + 0] = string.byte(cas, 1)
     a[x.cas + 1] = string.byte(cas, 2)
@@ -92,32 +96,16 @@ end
 
 ------------------------------------------------------
 
-local function create_request(cmd,
-                              key, ext, datatype, statusOrReserved, data,
-                              opaque, cas)
-  local h = create_header('request', cmd,
-                          key, ext, datatype, statusOrReserved, data,
-                          opaque, cas)
-  return h .. (ext or "") .. (key or "") .. (data or "")
+local function create_request(opcode, args)
+  args = args or {}
+  local h = create_header('request', opcode, args)
+  return h .. (args.ext or "") .. (args.key or "") .. (args.data or "")
 end
 
-local function create_response(cmd,
-                               key, ext, datatype, statusOrReserved, data,
-                               opaque, cas)
-  local h = create_header('response', cmd,
-                          key, ext, datatype, statusOrReserved, data,
-                          opaque, cas)
-  return h .. (ext or "") .. (key or "") .. (data or "")
-end
-
-------------------------------------------------------
-
-local function create_request_simple(cmd, key, ext, data, cas)
-  return create_request(cmd, key, ext, 0, 0, data, nil, cas)
-end
-
-local function create_response_simple(cmd, status, opaque, key, ext, data, cas)
-  return create_response(cmd, key, ext, 0, status, data, opaque, cas)
+local function create_response(opcode, args)
+  args = args or {}
+  local h = create_header('response', opcode, args)
+  return h .. (args.ext or "") .. (args.key or "") .. (args.data or "")
 end
 
 ------------------------------------------------------
@@ -262,9 +250,6 @@ mpb.pack = {
   create_request  = create_request,
   create_response = create_response,
 
-  create_request_simple  = create_request_simple,
-  create_response_simple = create_response_simple,
-
   recv_message  = recv_message,
   recv_request  = recv_request,
   recv_response = recv_response,
@@ -285,7 +270,7 @@ function TEST_pack()
   fx = mpb.request_header_field
   assert(fx)
 
-  x = create_request_simple(111)
+  x = create_request(111)
   assert(x)
   assert(string.len(x) == 24)
   assert(opcode(x, 'request') == 111)
@@ -296,7 +281,8 @@ function TEST_pack()
   assert(extlen(x, 'request') == 0)
   assert(bodylen(x, 'request') == 0)
 
-  x = create_request_simple(123, "hello", "goodbye", "you", 0xdeadbeef)
+  x = create_request(123, {
+        key = "hello", ext = "goodbye", data = "you" })
   assert(x)
   assert(string.len(x) == 24 + 15)
   assert(opcode(x, 'request') == 123)

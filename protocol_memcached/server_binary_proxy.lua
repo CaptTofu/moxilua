@@ -74,8 +74,10 @@ msbp[mpb.command.FLUSH] =
     end
 
     local res =
-      pack.create_response_simple(mpb.command.FLUSH, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.FLUSH, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 
@@ -112,8 +114,10 @@ msbp[mpb.command.NOOP] =
     end
 
     local res =
-      pack.create_response_simple(mpb.command.NOOP, SUCCESS,
-                                  pack.opaque(req, 'request'))
+      pack.create_response(mpb.command.NOOP, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request')
+      })
     return sock_send(skt, res)
   end
 

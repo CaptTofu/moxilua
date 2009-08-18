@@ -23,6 +23,7 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
 
         local handler = client_specs[cmd]
         if handler then
+          args = args or {}
           args.req = req
 
           if not handler(dconn, recv_after_wrapper, args) then
@@ -83,7 +84,7 @@ function memcached_pool_ascii(locations)
     return (head and
             sock_send(uconn, head .. "\r\n")) and
            ((not body) or
-            sock_send(uconn, body .. "\r\n"))
+            sock_send(uconn, body.data .. "\r\n"))
   end
 
   return memcached_pool(locations, memcached_client_ascii, recv_after_ascii)

@@ -39,9 +39,10 @@ function upstream_session_memcached_binary(self_addr, specs, go_data, upstream_s
         end
       else
         local err_unknown =
-          mpb.pack.create_response_simple(opcode,
-                                          mpb.response_status.UNKNOWN_COMMAND,
-                                          pack.opaque(req, 'request'))
+          mpb.pack.create_response(opcode, {
+            status = mpb.response_status.UNKNOWN_COMMAND,
+            opaque = pack.opaque(req, 'request')
+          })
 
         asock.send(self_addr, upstream_skt, err_unknown)
       end

@@ -6,7 +6,7 @@ memcached_server_ascii_proxy = {
       local n = 0
       for downstream_addr, keys in pairs(groups) do
         apo.send(downstream_addr, apo.self_address(),
-                 skt, "get", keys)
+                 skt, "get", "get", { keys = keys })
         n = n + 1
       end
 
@@ -19,12 +19,12 @@ memcached_server_ascii_proxy = {
 
   set =
     function(pool, skt, itr)
-      local key  = itr()
-      local flgs = itr()
-      local expt = itr()
-      local size = itr()
+      local key    = itr()
+      local flag   = itr()
+      local expire = itr()
+      local size   = itr()
 
-      if key and flgs and expt and size then
+      if key and flag and expire and size then
         size = tonumber(size)
         if size >= 0 then
           local data, err = sock_recv(skt, tonumber(size) + 2)
@@ -35,8 +35,12 @@ memcached_server_ascii_proxy = {
           local downstream_addr = pool.choose(key)
           if downstream_addr then
             apo.send(downstream_addr, apo.self_address(),
-                     skt, "set", {key},
-                     string.sub(data, 1, -3))
+                     skt, "set", "set", {
+                       key    = key,
+                       flag   = flag,
+                       expire = expire,
+                       data   = string.sub(data, 1, -3)
+                     })
             apo.recv()
             return true
           end
@@ -53,7 +57,7 @@ memcached_server_ascii_proxy = {
         local downstream_addr = pool.choose(key)
         if downstream_addr then
           apo.send(downstream_addr, apo.self_address(),
-                   skt, "delete", {key})
+                   skt, "delete", "delete", { key = key })
           apo.recv()
           return true
         end
@@ -68,7 +72,7 @@ memcached_server_ascii_proxy = {
       pool.each(
         function(downstream_addr)
           apo.send(downstream_addr, apo.self_address(),
-                   nil, "flush_all", {})
+                   nil, "flush_all", "flush_all", {})
           n = n + 1
         end)
 
