@@ -86,7 +86,6 @@ local function binary_vocal_cmd(conn, recv_callback, args)
   local ext = args.ext
   local msg = req .. (ext or "") .. (key or "") .. (args.data or "")
 
-local r = pack.opcode(req, 'request')
   local ok, err = sock_send(conn, msg)
   if not ok then
     return ok, err
