@@ -7,7 +7,7 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, args, value, recv_callback = apo.recv()
+        local sess_addr, uconn, cmd, req, args, recv_callback = apo.recv()
 
         local ok = true
 
@@ -23,7 +23,9 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
 
         local handler = client_specs[cmd]
         if handler then
-          if not handler(dconn, recv_after_wrapper, args, value) then
+          args.req = req
+
+          if not handler(dconn, recv_after_wrapper, args) then
             dconn:close()
             dconn = nil
           end
@@ -89,11 +91,10 @@ end
 
 function memcached_pool_binary(locations)
   local function recv_after_binary(uconn, head, body)
-    local key  = body[1]
-    local ext  = body[2]
-    local data = body[3]
-
-    local msg = head .. (ext or "") .. (key or "") .. (data or "")
+    local msg = head ..
+                (body.ext or "") ..
+                (body.key or "") ..
+                (body.data or "")
 
     return sock_send(uconn, msg)
   end

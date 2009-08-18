@@ -177,7 +177,7 @@ local function recv_message(conn, kind)
     end
   end
 
-  return hdr, err, key, ext, data
+  return hdr, err, { key = key, ext = ext, data = data }
 end
 
 ------------------------------------------------------
@@ -235,18 +235,18 @@ local function send_recv(conn, req, recv_callback, success_value)
     return ok, err
   end
 
-  local head, err, key, ext, data = recv_response(conn)
+  local head, err, rest = recv_response(conn)
   if not head then
     return head, err
   end
 
   if recv_callback then
-    recv_callback(head, {key, ext, data})
+    recv_callback(head, rest)
   end
 
   if opcode(head, 'response') == opcode(req, 'request') then
     if status(head) == mpb.response_status.SUCCESS then
-      return success_value, nil, key, ext, data
+      return success_value, nil, rest
     end
 
     return false, data

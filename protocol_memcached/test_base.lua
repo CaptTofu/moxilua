@@ -12,13 +12,9 @@ function printa(a, prefix)
     for i, v in pairs(a) do
       if i ~= 'n' then
         if type(v) == 'table' then
-          if #v == 0 then
-            p(prefix .. i .. ' {}')
-          else
-            p(prefix .. i .. ' {')
-            printa(v, prefix .. '  ')
-            p(prefix .. '}')
-          end
+          p(prefix .. i .. ' {')
+          printa(v, prefix .. '  ')
+          p(prefix .. '}')
         else
           p(prefix .. i .. ' ' .. v)
         end
@@ -50,7 +46,9 @@ end
 
 function tree_match(expect, actual)
   assert(type(expect) == type(actual),
-         "type mismatch, " .. type(expect) .. " " .. type(actual))
+         "type mismatch, " ..
+         type(expect) .. " " .. type(actual) .. " with " ..
+         tostring(expect) .. " and " .. tostring(actual))
 
   if type(expect) == 'string' then
     if not string.find(actual, "^" .. expect) then
@@ -71,6 +69,12 @@ function tree_match(expect, actual)
   for i = 1, #expect do
     tree_match(expect[i], actual[i])
   end
+
+  for k, v in pairs(expect) do
+    if k ~= 'n' then
+      tree_match(expect[k], actual[k])
+    end
+  end
 end
 
 function expected(...)
@@ -79,7 +83,7 @@ function expected(...)
     expect = {expect}
   end
 
-  if false then
+  if true then
     p("--------------")
     p("expect")
     pa(expect)

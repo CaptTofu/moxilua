@@ -9,8 +9,9 @@ memcached_client_binary = {
   create_response = pack.create_response,
 
   get =
-    function(conn, recv_callback, keys)
+    function(conn, recv_callback, args)
       local reqs = {}
+      local keys = args.keys
 
       for i = 1, #keys do
         reqs[#reqs + 1] = pack.create_request('GETKQ', keys[i])
@@ -26,7 +27,7 @@ memcached_client_binary = {
       end
 
       repeat
-        local head, err, key, ext, data = pack.recv_response(conn)
+        local head, err, rest = pack.recv_response(conn)
         if not head then
           return head, err
         end
@@ -38,7 +39,7 @@ memcached_client_binary = {
 
         if opcode == mpb.command.GETKQ then
           if recv_callback then
-            recv_callback(head, {key, ext, data})
+            recv_callback(head, rest)
           end
         else
           return false, "unexpected opcode " .. opcode
@@ -47,16 +48,16 @@ memcached_client_binary = {
     end,
 
   set =
-    function(conn, recv_callback, args, value)
-      local key = args[1]
-      local flg = args[2]
-      local exp = args[3]
+    function(conn, recv_callback, args)
+      local key = args.key
+      local flag = args.flag or 0
+      local expire = args.expire or 0
 
-      local flg_bytes = string.char(network_bytes(flg, 4))
-      local exp_bytes = string.char(network_bytes(exp, 4))
-      local ext = flg_bytes .. exp_bytes
+      local flag_bytes = string.char(network_bytes(flag, 4))
+      local expire_bytes = string.char(network_bytes(expire, 4))
+      local ext = flag_bytes .. expire_bytes
 
-      local req = pack.create_request_simple('SET', key, ext, value)
+      local req = pack.create_request_simple('SET', key, ext, args.data)
 
       return pack.send_recv(conn, req,
                             recv_callback, "STORED")
@@ -65,7 +66,7 @@ memcached_client_binary = {
   delete =
     function(conn, recv_callback, args)
       return pack.send_recv(conn,
-                            pack.create_request('DELETE', args[1]),
+                            pack.create_request('DELETE', args.key),
                             recv_callback, "DELETED")
     end,
 
@@ -81,11 +82,11 @@ memcached_client_binary = {
 
 -- Catch all functions for pure-binary clients aware of binary opcodes.
 --
-local function binary_vocal_cmd(conn, recv_callback, args, data)
-  local req = args[1]
-  local key = args[2]
-  local ext = args[3]
-  local msg = req .. (ext or "") .. (key or "") .. (data or "")
+local function binary_vocal_cmd(conn, recv_callback, args)
+  local req = args.req
+  local key = args.key
+  local ext = args.ext
+  local msg = req .. (ext or "") .. (key or "") .. (args.data or "")
 
 local r = pack.opcode(req, 'request')
   local ok, err = sock_send(conn, msg)
@@ -94,19 +95,19 @@ local r = pack.opcode(req, 'request')
   end
 
   repeat
-    local head, err, key, ext, data = pack.recv_response(conn)
+    local head, err, rest = pack.recv_response(conn)
     if not head then
       return head, err
     end
 
     if recv_callback then
-      recv_callback(head, {key, ext, data})
+      recv_callback(head, rest)
     end
 
     local o = pack.opcode(head, 'response')
     if o == pack.opcode(req, 'request') then
       if pack.status(head) == mpb.response_status.SUCCESS then
-        return true, nil, key, ext, data
+        return true, nil, rest
       end
 
       return false, data
@@ -119,11 +120,11 @@ local r = pack.opcode(req, 'request')
   until false
 end
 
-local function binary_quiet_cmd(conn, recv_callback, args, data)
-  local req = args[1]
-  local key = args[2]
-  local ext = args[3]
-  local msg = req .. (ext or "") .. (key or "") .. (data or "")
+local function binary_quiet_cmd(conn, recv_callback, args)
+  local req = args.req
+  local key = args.key
+  local ext = args.ext
+  local msg = req .. (ext or "") .. (key or "") .. (args.data or "")
 
   return sock_send(conn, msg)
 end

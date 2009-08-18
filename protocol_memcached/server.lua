@@ -29,12 +29,12 @@ function upstream_session_memcached_binary(self_addr, specs, go_data, upstream_s
   local err, key, ext, data
 
   while req do
-    req, err, key, ext, data = mpb.pack.recv_request(upstream_skt)
+    req, err, args = mpb.pack.recv_request(upstream_skt)
     if req then
       local opcode = mpb.pack.opcode(req, 'request')
       local spec = specs[opcode]
       if spec then
-        if not spec(go_data, upstream_skt, req, key, ext, data) then
+        if not spec(go_data, upstream_skt, req, args) then
           req = nil
         end
       else

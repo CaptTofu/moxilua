@@ -14,56 +14,65 @@ c:settimeout(nil)
 
 p("connected", host, port, c)
 
-fresh()
-assert(client.flush_all(c, got) == "OK")
-expected({".+", {}})
+EMPTY = { key = nil, ext = nil, data = nil }
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}) == "END")
+assert(client.flush_all(c, got) == "OK")
+expected({".+", EMPTY})
+
+fresh()
+assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
 expected()
 
 fresh()
-assert(client.set(c, got, {"a", 0, 0}, "hello") == "STORED")
-expected({".+", {}})
+assert(client.set(c, got, {key = "a", data = "hello"}) == "STORED")
+expected({".+", EMPTY})
 
 fresh()
-assert(client.get(c, got, {"a"}) == "END")
-expected({".+", {"a", ".+", "hello"}})
+assert(client.get(c, got, {keys = {"a"}}) == "END")
+expected({".+", {key = "a", ext = ".+", data = "hello"}})
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", {"a", ".+", "hello"}})
+assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
+expected({".+", {key = "a", ext = ".+", data = "hello"}})
 
 fresh()
-assert(client.set(c, got, {"b", 0, 0}, "world"))
-expected({".+", {}})
+assert(client.set(c, got, {key = "b", flag = 0, expire = 0,
+                           data = "world"}) == "STORED")
+expected({".+", EMPTY})
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", {"a", ".+", "hello"}},
-         {".+", {"b", ".+", "world"}})
+assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
+expected(
+  {".+", {key = "a", ext = ".+", data = "hello"}},
+  {".+", {key = "b", ext = ".+", data = "world"}}
+)
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c", "a", "b", "c"}) == "END")
-expected({".+", {"a", ".+", "hello"}},
-         {".+", {"b", ".+", "world"}},
-         {".+", {"a", ".+", "hello"}},
-         {".+", {"b", ".+", "world"}})
+assert(client.get(c, got, {keys = {"a", "b", "c", "a", "b", "c"}}) == "END")
+expected(
+  {".+", {key = "a", ext = ".+", data = "hello"}},
+  {".+", {key = "b", ext = ".+", data = "world"}},
+  {".+", {key = "a", ext = ".+", data = "hello"}},
+  {".+", {key = "b", ext = ".+", data = "world"}}
+)
 
 fresh()
-assert(client.delete(c, got, {"b"}) == "DELETED")
-expected({".+", {}})
+assert(client.delete(c, got, {key = "b"}) == "DELETED")
+expected({".+", EMPTY})
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}) == "END")
-expected({".+", {"a", ".+", "hello"}})
+assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
+expected(
+  {".+", {key = "a", ext = ".+", data = "hello"}}
+)
 
 fresh()
 assert(client.flush_all(c, got) == "OK")
-expected({".+", {}})
+expected({".+", EMPTY})
 
 fresh()
-assert(client.get(c, got, {"a", "b", "c"}) == "END")
+assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
 expected()
 
 p("done!")

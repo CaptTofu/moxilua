@@ -1,7 +1,7 @@
 memcached_client_ascii = {
   get =
-    function(conn, recv_callback, keys)
-      local line = "get " .. table.concat(keys, ' ') .. "\r\n"
+    function(conn, recv_callback, args)
+      local line = "get " .. table.concat(args.keys, ' ') .. "\r\n"
 
       local ok, err = sock_send(conn, line)
       if not ok then
@@ -18,17 +18,17 @@ memcached_client_ascii = {
           return line
         end
 
-        local body = nil
+        local data = nil
 
         if string.find(line, "^VALUE ") then
-          body, err = sock_recv(conn)
-          if not body then
-            return body, err
+          data, err = sock_recv(conn)
+          if not data then
+            return data, err
           end
         end
 
         if recv_callback then
-          recv_callback(line, body)
+          recv_callback(line, { data = data })
         end
       until false
     end,
@@ -37,18 +37,18 @@ memcached_client_ascii = {
     function(conn, recv_callback, args, value)
       return sock_send_recv(conn,
                             "set " ..
-                            (args[1])      .. " " ..
-                            (args[2] or 0) .. " " ..
-                            (args[3] or 0) .. " " ..
-                            string.len(value) .. "\r\n" ..
-                            value .. "\r\n",
+                            (args.key)      .. " " ..
+                            (args.flag or 0) .. " " ..
+                            (args.expire or 0) .. " " ..
+                            string.len(args.data) .. "\r\n" ..
+                            args.data .. "\r\n",
                             recv_callback)
     end,
 
   delete =
     function(conn, recv_callback, args)
       return sock_send_recv(conn,
-                            "delete " .. args[1] .. "\r\n",
+                            "delete " .. args.key .. "\r\n",
                             recv_callback)
     end,
 
