@@ -1,7 +1,7 @@
 memcached_server_ascii_proxy = {
   get =
-    function(pool, skt, itr)
-      local groups = group_by(itr, pool.choose)
+    function(pool, skt, arr)
+      local groups = group_by(arr, pool.choose)
 
       local n = 0
       for downstream_addr, keys in pairs(groups) do
@@ -18,11 +18,11 @@ memcached_server_ascii_proxy = {
     end,
 
   set =
-    function(pool, skt, itr)
-      local key    = itr()
-      local flag   = itr()
-      local expire = itr()
-      local size   = itr()
+    function(pool, skt, arr)
+      local key    = arr[1]
+      local flag   = arr[2]
+      local expire = arr[3]
+      local size   = arr[4]
 
       if key and flag and expire and size then
         size = tonumber(size)
@@ -42,6 +42,7 @@ memcached_server_ascii_proxy = {
                        data   = string.sub(data, 1, -3)
                      })
             apo.recv()
+
             return true
           end
         end
@@ -51,8 +52,8 @@ memcached_server_ascii_proxy = {
     end,
 
   delete =
-    function(pool, skt, itr)
-      local key = itr()
+    function(pool, skt, arr)
+      local key = arr[1]
       if key then
         local downstream_addr = pool.choose(key)
         if downstream_addr then
@@ -67,7 +68,7 @@ memcached_server_ascii_proxy = {
     end,
 
   flush_all =
-    function(pool, skt, itr)
+    function(pool, skt, arr)
       local n = 0
       pool.each(
         function(downstream_addr)
@@ -84,7 +85,7 @@ memcached_server_ascii_proxy = {
     end,
 
   quit =
-    function(pool, skt, itr)
+    function(pool, skt, arr)
       return false
     end
 }

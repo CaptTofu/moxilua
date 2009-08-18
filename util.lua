@@ -1,3 +1,5 @@
+-- Define the sock_send/recv functions to use asynchronous actor sockets.
+--
 if _G.sock_recv == nil and
    _G.sock_send == nil and
    _G.sock_send_recv == nil and
@@ -82,9 +84,10 @@ end
 
 -- Groups items in itr by the key returned by key_func(itr).
 --
-function group_by(itr, key_func)
+function group_by(arr, key_func)
   local groups = {}
-  for x in itr do
+  for i = 1, #arr do
+    local x = arr[i]
     local k = assert(key_func(x))
     local g = groups[k]
     if g then
@@ -116,6 +119,16 @@ function array_iter(arr, start, step)
          end
 end
 
+-- Returns an array from an iterator function.
+--
+function iter_array(itr)
+  local a = {}
+  for v in itr do
+    a[#a + 1] = v
+  end
+  return a
+end
+
 ------------------------------------------------------
 
 -- Run all functions that have a "TEST_" prefix.
@@ -144,6 +157,8 @@ function TEST_array_iter()
   end
   assert(not x())
   assert(not x())
+  assert(iter_array(array_iter({'a'}))[1] == 'a')
+  assert(iter_array(array_iter({'a'}))[2] == nil)
 end
 
 function TEST_host_port()
@@ -162,7 +177,7 @@ function TEST_host_port()
 end
 
 function TEST_group_by()
-  gb = group_by(array_iter({1, 2, 2, 3, 3, 3}),
+  gb = group_by({1, 2, 2, 3, 3, 3},
                 function(x) return x end)
   for k, v in pairs(gb) do
     -- print(k, #v, unpack(v))
