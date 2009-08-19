@@ -10,8 +10,11 @@ memcached_server_ascii_proxy = {
         n = n + 1
       end
 
+      local oks = 0
       for i = 1, n do
-        apo.recv()
+        if apo.recv() then
+          oks = oks + 1
+        end
       end
 
       return sock_send(skt, "END\r\n")
@@ -41,9 +44,8 @@ memcached_server_ascii_proxy = {
                        expire = expire,
                        data   = string.sub(data, 1, -3)
                      })
-            apo.recv()
 
-            return true
+            return apo.recv()
           end
         end
       end
@@ -59,8 +61,8 @@ memcached_server_ascii_proxy = {
         if downstream_addr then
           apo.send(downstream_addr, apo.self_address(),
                    skt, "delete", { key = key })
-          apo.recv()
-          return true
+
+          return apo.recv()
         end
       end
 
@@ -77,8 +79,11 @@ memcached_server_ascii_proxy = {
           n = n + 1
         end)
 
+      local oks = 0
       for i = 1, n do
-        apo.recv()
+        if apo.recv() then
+          oks = oks + 1
+        end
       end
 
       return sock_send(skt, "OK\r\n")

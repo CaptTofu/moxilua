@@ -21,8 +21,8 @@ msbp[mpb.command.SET] =
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
                skt, mpb.command.SET, args)
-      apo.recv()
-      return true
+
+      return apo.recv()
     end
 
     return false -- TODO: send err response.
@@ -44,8 +44,8 @@ msbp[mpb.command.DELETE] =
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
                skt, mpb.command.DELETE, args)
-      apo.recv()
-      return true
+
+      return apo.recv()
     end
 
     return false -- TODO: send err response.
@@ -75,8 +75,11 @@ msbp[mpb.command.FLUSH] =
         n = n + 1
       end)
 
+    local oks = 0
     for i = 1, n do
-      apo.recv()
+      if apo.recv() then
+        oks = oks + 1
+      end
     end
 
     local res =
@@ -117,8 +120,11 @@ msbp[mpb.command.NOOP] =
         n = n + 1
       end)
 
+    local oks = 0
     for i = 1, n do
-      apo.recv()
+      if apo.recv() then
+        oks = oks + 1
+      end
     end
 
     local res =
@@ -145,7 +151,8 @@ msbp[mpb.command.GETKQ] =
     if downstream_addr then
       apo.send(downstream_addr, apo.self_address(),
                skt, mpb.command.GETKQ, args)
-      apo.recv()
+
+      return apo.recv()
     end
     return true
   end
