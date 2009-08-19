@@ -9,24 +9,29 @@ local pack = mpb.pack
 
 local SUCCESS = mpb.response_stats.SUCCESS
 
+------------------------------------------------------
+
+local function simple_forward(pool, skt, req, args)
+  args.req = req
+
+  local downstream_addr = pool.choose(args.key)
+  if downstream_addr then
+    apo.send(downstream_addr, apo.self_address(),
+             skt, pack.opcode(req, 'request'), args)
+
+    return apo.recv()
+  end
+
+  return false -- TODO: send err response instead?
+end
+
+------------------------------------------------------
+
 msbp[mpb.command.GET] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.SET] =
-  function(pool, skt, req, args)
-    args.req = req
-
-    local downstream_addr = pool.choose(args.key)
-    if downstream_addr then
-      apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.SET, args)
-
-      return apo.recv()
-    end
-
-    return false -- TODO: send err response.
-  end
+msbp[mpb.command.SET] = simple_forward
 
 msbp[mpb.command.ADD] =
   function(pool, skt, req, args)
@@ -36,20 +41,7 @@ msbp[mpb.command.REPLACE] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.DELETE] =
-  function(pool, skt, req, args)
-    args.req = req
-
-    local downstream_addr = pool.choose(args.key)
-    if downstream_addr then
-      apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.DELETE, args)
-
-      return apo.recv()
-    end
-
-    return false -- TODO: send err response.
-  end
+msbp[mpb.command.DELETE] = simple_forward
 
 msbp[mpb.command.INCREMENT] =
   function(pool, skt, req, args)
@@ -61,6 +53,7 @@ msbp[mpb.command.DECREMENT] =
 
 msbp[mpb.command.QUIT] =
   function(pool, skt, req, args)
+    return false
   end
 
 msbp[mpb.command.FLUSH] =
@@ -143,19 +136,7 @@ msbp[mpb.command.GETK] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.GETKQ] =
-  function(pool, skt, req, args)
-    args.req = req
-
-    local downstream_addr = pool.choose(args.key)
-    if downstream_addr then
-      apo.send(downstream_addr, apo.self_address(),
-               skt, mpb.command.GETKQ, args)
-
-      return apo.recv()
-    end
-    return true
-  end
+msbp[mpb.command.GETKQ] = simple_forward
 
 msbp[mpb.command.APPEND] =
   function(pool, skt, req, args)
