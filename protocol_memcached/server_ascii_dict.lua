@@ -1,6 +1,6 @@
 memcached_server_ascii_dict = {
   get =
-    function(dict, skt, arr)
+    function(dict, skt, cmd, arr)
       for i = 1, #arr do
         local key = arr[i]
 
@@ -18,7 +18,7 @@ memcached_server_ascii_dict = {
     end,
 
   set =
-    function(dict, skt, arr)
+    function(dict, skt, cmd, arr)
       local key    = arr[1]
       local flag   = arr[2]
       local expire = arr[3]
@@ -42,7 +42,7 @@ memcached_server_ascii_dict = {
     end,
 
   delete =
-    function(dict, skt, arr)
+    function(dict, skt, cmd, arr)
       local key = arr[1]
       if key then
         if dict.tbl[key] then
@@ -56,13 +56,13 @@ memcached_server_ascii_dict = {
     end,
 
   flush_all =
-    function(dict, skt, arr)
+    function(dict, skt, cmd, arr)
       dict.tbl = {}
       return sock_send(skt, "OK\r\n")
     end,
 
   quit =
-    function(dict, skt, arr)
+    function(dict, skt, cmd, arr)
       return false
     end
 }

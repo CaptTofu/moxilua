@@ -8,7 +8,7 @@ function upstream_session_memcached_ascii(self_addr, specs, go_data, upstream_sk
       if cmd then
         local spec = specs[cmd]
         if spec then
-          if not spec(go_data, upstream_skt, iter_array(itr)) then
+          if not spec(go_data, upstream_skt, cmd, iter_array(itr)) then
             req = nil
           end
         else
