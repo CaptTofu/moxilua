@@ -7,31 +7,37 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local sess_addr, uconn, cmd, args, recv_callback = apo.recv()
+        local what, uconn, cmd, args, recv_callback = apo.recv()
+        if what == "close" then
+          dconn:close()
+          dconn = nil
+        else
+          local ok = true
 
-        local ok = true
+          local function recv_after_wrapper(head, body)
+            if uconn then
+              ok = ok and recv_after(uconn, head, body)
+            end
 
-        local function recv_after_wrapper(head, body)
-          if uconn then
-            ok = ok and recv_after(uconn, head, body)
+            if recv_callback then
+              ok = ok and recv_callback(head, body)
+            end
           end
 
-          if recv_callback then
-            ok = ok and recv_callback(head, body)
+          local handler = client_specs[cmd]
+          if handler then
+            args = args or {}
+
+            if not handler(dconn, recv_after_wrapper, args) then
+              dconn:close()
+              dconn = nil
+            end
           end
+
+          local sess_addr = what
+
+          apo.send(sess_addr, ok and dconn)
         end
-
-        local handler = client_specs[cmd]
-        if handler then
-          args = args or {}
-
-          if not handler(dconn, recv_after_wrapper, args) then
-            dconn:close()
-            dconn = nil
-          end
-        end
-
-        apo.send(sess_addr, ok and dconn)
       end
 
       done_func(self_addr)
@@ -79,24 +85,33 @@ function memcached_pool(locations)
   end
 
   local function find_downstream(i)
-    local x = downstream_addrs[i]
-    if not x then
-      local location = locations[i]
-      if location then
-        local kind = memcached_downstream_kind[location.kind]
+    local d = downstream_addrs[i]
+    if not d then
+      local x = locations[i]
+      if x then
+        local kind = memcached_downstream_kind[x.kind]
         if kind then
-          x = spawn_downstream(location.addr,
+          d = spawn_downstream(x.location,
                                kind.client_specs,
                                kind.recv_after,
                                done_func)
-          downstream_addrs[i] = x
+          downstream_addrs[i] = d
         end
       end
     end
-    return x
+    return d
   end
 
   return {
+    close =
+      function()
+        for i = 1, #downstream_addrs do
+          if downstream_addrs[i] then
+            apo.send(downstream_addrs[i], "close")
+          end
+        end
+      end,
+
     choose =
       function(key)
         return find_downstream(1)
