@@ -51,14 +51,18 @@ server = socket.bind(host, 11322)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii,
           memcached_server_a2a_proxy,
-          memcached_pool_ascii({ "127.0.0.1:11311" }))
+          memcached_pool({
+            { addr = "127.0.0.1:11311", kind = "ascii" }
+          }))
 
 -- Start binary proxy to binary self.
 server = socket.bind(host, 11422)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
           memcached_server_b2b_proxy,
-          memcached_pool_binary({ "127.0.0.1:11411" }))
+          memcached_pool({
+            { addr = "127.0.0.1:11411", kind = "binary" }
+          }))
 
 print("loop")
 

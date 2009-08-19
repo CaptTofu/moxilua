@@ -41,7 +41,33 @@ end
 
 ------------------------------------------
 
-function memcached_pool(locations, client_specs, recv_after)
+memcached_downstream_kind = {
+  ascii = {
+    client_specs = memcached_client_ascii,
+    recv_after = function(uconn, head, body)
+      return (head and
+              sock_send(uconn, head .. "\r\n")) and
+             ((not body) or
+              sock_send(uconn, body.data .. "\r\n"))
+    end
+  },
+
+  binary = {
+    client_specs = memcached_client_binary,
+    recv_after = function(uconn, head, body)
+      local msg = head ..
+                  (body.ext or "") ..
+                  (body.key or "") ..
+                  (body.data or "")
+
+      return sock_send(uconn, msg)
+    end
+  }
+}
+
+------------------------------------------
+
+function memcached_pool(locations)
   local downstream_addrs = {}
 
   local function done_func(downstream_addr)
@@ -55,8 +81,17 @@ function memcached_pool(locations, client_specs, recv_after)
   local function find_downstream(i)
     local x = downstream_addrs[i]
     if not x then
-      x = spawn_downstream(locations[i], client_specs, recv_after, done_func)
-      downstream_addrs[i] = x
+      local location = locations[i]
+      if location then
+        local kind = memcached_downstream_kind[location.kind]
+        if kind then
+          x = spawn_downstream(location.addr,
+                               kind.client_specs,
+                               kind.recv_after,
+                               done_func)
+          downstream_addrs[i] = x
+        end
+      end
     end
     return x
   end
@@ -74,31 +109,5 @@ function memcached_pool(locations, client_specs, recv_after)
         end
       end
   }
-end
-
-------------------------------------------
-
-function memcached_pool_ascii(locations)
-  local function recv_after_ascii(uconn, head, body)
-    return (head and
-            sock_send(uconn, head .. "\r\n")) and
-           ((not body) or
-            sock_send(uconn, body.data .. "\r\n"))
-  end
-
-  return memcached_pool(locations, memcached_client_ascii, recv_after_ascii)
-end
-
-function memcached_pool_binary(locations)
-  local function recv_after_binary(uconn, head, body)
-    local msg = head ..
-                (body.ext or "") ..
-                (body.key or "") ..
-                (body.data or "")
-
-    return sock_send(uconn, msg)
-  end
-
-  return memcached_pool(locations, memcached_client_binary, recv_after_binary)
 end
 
