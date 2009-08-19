@@ -1,4 +1,4 @@
--- Parses protocol_binary.h into useful lua tables.
+-- Parses protocol_memcached/protocol_binary.h into useful lua tables.
 --
 local lines = {}
 

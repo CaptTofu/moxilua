@@ -37,7 +37,7 @@ memcached_client_ascii = {
     function(conn, recv_callback, args, value)
       return sock_send_recv(conn,
                             "set " ..
-                            (args.key)      .. " " ..
+                            (args.key) .. " " ..
                             (args.flag or 0) .. " " ..
                             (args.expire or 0) .. " " ..
                             string.len(args.data) .. "\r\n" ..

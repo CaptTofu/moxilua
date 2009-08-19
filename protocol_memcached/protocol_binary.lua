@@ -1,4 +1,4 @@
--- generated from 'lua protocol_binary_h2lua.lua'
+-- generated from 'lua protocol_memcached/protocol_binary_h2lua.lua'
 --
 local function uint_t(bits, name)
   return { name      = name,
