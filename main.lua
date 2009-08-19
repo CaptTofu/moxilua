@@ -52,7 +52,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11322)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii,
-          memcached_server_a2a_proxy,
+          memcached_server_ascii_proxy,
           memcached_pool({
             { location = "127.0.0.1:11311", kind = "ascii" }
           }))
@@ -61,7 +61,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11422)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
-          memcached_server_b2b_proxy,
+          memcached_server_binary_proxy,
           memcached_pool({
             { location = "127.0.0.1:11411", kind = "binary" }
           }))
@@ -72,7 +72,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11300)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii,
-          memcached_server_a2a_proxy,
+          memcached_server_ascii_proxy,
           memcached_pool({
             { location = "127.0.0.1:11211", kind = "ascii" }
           }))
@@ -81,7 +81,7 @@ apo.spawn(upstream_accept, server,
 server = socket.bind(host, 11400)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
-          memcached_server_b2b_proxy,
+          memcached_server_binary_proxy,
           memcached_pool({
             { location = "127.0.0.1:11211", kind = "binary" }
           }))

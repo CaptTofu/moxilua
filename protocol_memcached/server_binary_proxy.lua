@@ -1,9 +1,9 @@
 -- Need a noreply version of client_binary api.
 -- Also, need to handle opaque's right.
 --
-memcached_server_b2b_proxy = {}
+memcached_server_binary_proxy = {}
 
-local msbp = memcached_server_b2b_proxy
+local msbp = memcached_server_binary_proxy
 local mpb  = memcached_protocol_binary
 local pack = mpb.pack
 
