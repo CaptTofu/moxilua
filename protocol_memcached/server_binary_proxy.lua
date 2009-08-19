@@ -18,7 +18,7 @@ local function forward_simple(pool, skt, req, args)
 
   local downstream_addr = pool.choose(args.key)
   if downstream_addr then
-    apo.send(downstream_addr, apo.self_address(),
+    apo.send(downstream_addr, "fwd", apo.self_address(),
              skt, pack.opcode(req, 'request'), args)
 
     return apo.recv()
@@ -37,7 +37,7 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
   local n = 0
   pool.each(
     function(downstream_addr)
-      apo.send(downstream_addr, apo.self_address(),
+      apo.send(downstream_addr, "fwd", apo.self_address(),
                false, opcode, args, skt_callback)
       n = n + 1
     end)

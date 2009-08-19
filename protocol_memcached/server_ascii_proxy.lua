@@ -16,7 +16,7 @@ local function forward_update_create(pool, skt, cmd, arr)
 
       local downstream_addr = pool.choose(key)
       if downstream_addr then
-        apo.send(downstream_addr, apo.self_address(),
+        apo.send(downstream_addr, "fwd", apo.self_address(),
                  skt, cmd, {
                    key    = key,
                    flag   = flag,
@@ -41,7 +41,7 @@ memcached_server_a2a_proxy = {
 
       local n = 0
       for downstream_addr, keys in pairs(groups) do
-        apo.send(downstream_addr, apo.self_address(),
+        apo.send(downstream_addr, "fwd", apo.self_address(),
                  skt, "get", { keys = keys })
         n = n + 1
       end
@@ -68,7 +68,7 @@ memcached_server_a2a_proxy = {
       if key then
         local downstream_addr = pool.choose(key)
         if downstream_addr then
-          apo.send(downstream_addr, apo.self_address(),
+          apo.send(downstream_addr, "fwd", apo.self_address(),
                    skt, "delete", { key = key })
 
           return apo.recv()
@@ -83,7 +83,7 @@ memcached_server_a2a_proxy = {
       local n = 0
       pool.each(
         function(downstream_addr)
-          apo.send(downstream_addr, apo.self_address(),
+          apo.send(downstream_addr, "fwd", apo.self_address(),
                    false, "flush_all", {})
           n = n + 1
         end)
