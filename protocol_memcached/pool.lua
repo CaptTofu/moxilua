@@ -74,35 +74,41 @@ memcached_downstream_kind = {
 ------------------------------------------
 
 function memcached_pool(locations)
-  local downstream_addrs = {}
+  local downstreams = {}
 
   local function done_func(downstream_addr)
-    for i, d in ipairs(downstream_addrs) do
-      if downstream_addr == d then
-        downstream_addrs[i] = nil
+    for k, downstream in pairs(downstreams) do
+      if downstream.addr == downstream_addr then
+        downstreams[k] = nil
       end
     end
   end
 
-  local function find_downstream(i)
-    local d = downstream_addrs[i]
-    if not d then
-      local x = locations[i]
+  local function find_downstream(k)
+    local downstream = downstreams[k]
+    if not downstream then
+      local x = locations[k]
       if x then
         local kind = memcached_downstream_kind[x.kind]
         if kind then
-          d = spawn_downstream(x.location,
-                               kind.client_specs,
-                               kind.recv_after,
-                               done_func)
-          downstream_addrs[i] = d
+          local downstream_addr =
+            spawn_downstream(x.location,
+                             kind.client_specs,
+                             kind.recv_after,
+                             done_func)
+          downstream = {
+            location = x.location,     -- eg, "localhost:11211"
+            kind     = x.kind,         -- eg, binary or ascii.
+            addr     = downstream_addr -- An apo address.
+          }
+          downstreams[k] = downstream
         end
       end
     end
-    return d
+    return downstream
   end
 
-  return {
+  local pool = {
     close =
       function()
         for i = 1, #downstream_addrs do
@@ -119,10 +125,12 @@ function memcached_pool(locations)
 
     each =
       function(each_func)
-        for i = 1, #locations do
-          each_func(find_downstream(i))
+        for k, location in pairs(locations) do
+          each_func(find_downstream(k))
         end
       end
   }
+
+  return pool
 end
 

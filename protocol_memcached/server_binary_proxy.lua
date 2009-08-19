@@ -16,9 +16,10 @@ local SUCCESS = mpb.response_stats.SUCCESS
 local function forward_simple(pool, skt, req, args)
   args.req = req
 
-  local downstream_addr = pool.choose(args.key)
-  if downstream_addr then
-    apo.send(downstream_addr, "fwd", apo.self_address(),
+  local downstream = pool.choose(args.key)
+  if downstream and
+     downstream.addr then
+    apo.send(downstream.addr, "fwd", apo.self_address(),
              skt, pack.opcode(req, 'request'), args)
 
     return apo.recv()
@@ -36,8 +37,8 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
 
   local n = 0
   pool.each(
-    function(downstream_addr)
-      apo.send(downstream_addr, "fwd", apo.self_address(),
+    function(downstream)
+      apo.send(downstream.addr, "fwd", apo.self_address(),
                false, opcode, args, skt_callback)
       n = n + 1
     end)

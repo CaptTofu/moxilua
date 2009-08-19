@@ -14,9 +14,10 @@ local function forward_update_create(pool, skt, cmd, arr)
         return data, err
       end
 
-      local downstream_addr = pool.choose(key)
-      if downstream_addr then
-        apo.send(downstream_addr, "fwd", apo.self_address(),
+      local downstream = pool.choose(key)
+      if downstream and
+         downstream.addr then
+        apo.send(downstream.addr, "fwd", apo.self_address(),
                  skt, cmd, {
                    key    = key,
                    flag   = flag,
@@ -40,8 +41,8 @@ memcached_server_ascii_proxy = {
       local groups = group_by(arr, pool.choose)
 
       local n = 0
-      for downstream_addr, keys in pairs(groups) do
-        apo.send(downstream_addr, "fwd", apo.self_address(),
+      for downstream, keys in pairs(groups) do
+        apo.send(downstream.addr, "fwd", apo.self_address(),
                  skt, "get", { keys = keys })
         n = n + 1
       end
@@ -66,9 +67,10 @@ memcached_server_ascii_proxy = {
     function(pool, skt, cmd, arr)
       local key = arr[1]
       if key then
-        local downstream_addr = pool.choose(key)
-        if downstream_addr then
-          apo.send(downstream_addr, "fwd", apo.self_address(),
+        local downstream = pool.choose(key)
+        if downstream and
+           downstream.addr then
+          apo.send(downstream.addr, "fwd", apo.self_address(),
                    skt, "delete", { key = key })
 
           return apo.recv()
@@ -82,8 +84,8 @@ memcached_server_ascii_proxy = {
     function(pool, skt, cmd, arr)
       local n = 0
       pool.each(
-        function(downstream_addr)
-          apo.send(downstream_addr, "fwd", apo.self_address(),
+        function(downstream)
+          apo.send(downstream.addr, "fwd", apo.self_address(),
                    false, "flush_all", {})
           n = n + 1
         end)
