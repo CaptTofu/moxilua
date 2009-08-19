@@ -17,7 +17,7 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
           end
 
           if recv_callback then
-            recv_callback(head, body)
+            ok = ok and recv_callback(head, body)
           end
         end
 

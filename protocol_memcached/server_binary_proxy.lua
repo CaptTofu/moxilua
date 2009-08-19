@@ -100,7 +100,7 @@ msbp[mpb.command.NOOP] =
   function(pool, skt, req, args)
     local function skt_callback(head, body)
       if pack.opcode(head, 'response') == mpb.command.NOOP then
-        return
+        return true
       end
 
       local msg = head ..
