@@ -36,7 +36,7 @@ end
 
 -----------------------------------
 
-memcached_server_ascii_proxy = {
+memcached_server_a2a_proxy = {
   get =
     function(pool, skt, arr)
       local groups = group_by(arr, pool.choose)

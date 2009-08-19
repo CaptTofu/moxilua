@@ -40,24 +40,24 @@ apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii,
           memcached_server_ascii_dict, dict)
 
--- Start ascii proxy to ascii self.
-server = socket.bind(host, 11322)
-apo.spawn(upstream_accept, server,
-          upstream_session_memcached_ascii,
-          memcached_server_ascii_proxy,
-          memcached_pool_ascii({ "127.0.0.1:11311" }))
-
 -- Start binary server.
 server = socket.bind(host, 11411)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
           memcached_server_binary_dict, dict)
 
+-- Start ascii proxy to ascii self.
+server = socket.bind(host, 11322)
+apo.spawn(upstream_accept, server,
+          upstream_session_memcached_ascii,
+          memcached_server_a2a_proxy,
+          memcached_pool_ascii({ "127.0.0.1:11311" }))
+
 -- Start binary proxy to binary self.
 server = socket.bind(host, 11422)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary,
-          memcached_server_binary_proxy,
+          memcached_server_b2b_proxy,
           memcached_pool_binary({ "127.0.0.1:11411" }))
 
 print("loop")
