@@ -1,3 +1,20 @@
+-- Create a closure that does an ascii update.
+--
+local function update_create(cmd)
+  return function(conn, recv_callback, args, value)
+           return sock_send_recv(conn,
+                                 cmd .. " " ..
+                                 (args.key) .. " " ..
+                                 (args.flag or 0) .. " " ..
+                                 (args.expire or 0) .. " " ..
+                                 string.len(args.data) .. "\r\n" ..
+                                 args.data .. "\r\n",
+                                 recv_callback)
+         end
+end
+
+----------------------------------------------------
+
 memcached_client_ascii = {
   get =
     function(conn, recv_callback, args)
@@ -33,17 +50,11 @@ memcached_client_ascii = {
       until false
     end,
 
-  set =
-    function(conn, recv_callback, args, value)
-      return sock_send_recv(conn,
-                            "set " ..
-                            (args.key) .. " " ..
-                            (args.flag or 0) .. " " ..
-                            (args.expire or 0) .. " " ..
-                            string.len(args.data) .. "\r\n" ..
-                            args.data .. "\r\n",
-                            recv_callback)
-    end,
+  set     = update_create("set"),
+  add     = update_create("add"),
+  replace = update_create("replace"),
+  append  = update_create("append"),
+  prepend = update_create("prepend"),
 
   delete =
     function(conn, recv_callback, args)

@@ -1,4 +1,4 @@
--- Returns a closure for an ascii update command.
+-- Forward an ascii update command.
 --
 local function forward_update_create(pool, skt, cmd, arr)
   local key    = arr[1]
