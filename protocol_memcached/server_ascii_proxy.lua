@@ -4,6 +4,7 @@ local a2x = {
   ascii = -- Downstream is ascii.
     function(downstream, skt, cmd, args, response_filter)
       -- The args looks like { keys = { "key1", "key2", ... } }
+      -- or like { key = "key1", flag = 0, expire = 0, data = "hello" }
       --
       local function response(head, body)
         if (not response_filter) or
