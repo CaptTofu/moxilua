@@ -12,37 +12,32 @@ local SUCCESS = mpb.response_stats.SUCCESS
 -- Translators for binary upstream to different downstreams.
 --
 local b2x = {
-  ascii = { -- Downstream is ascii.
-    request =
-      function(downstream, skt, cmd, args)
-      end,
-    response =
-      function(uconn, head, body)
+  ascii = -- Downstream is ascii.
+    function(downstream, skt, cmd, args)
+      local function response(head, body)
         return (head and
-                sock_send(uconn, head .. "\r\n")) and
+                sock_send(skt, head .. "\r\n")) and
                ((not body) or
-                sock_send(uconn, body.data .. "\r\n"))
+                sock_send(skt, body.data .. "\r\n"))
       end
-  },
+    end,
 
-  binary = { -- Downstream is binary.
-    request =
-      function(downstream, skt, cmd, args, skt_callback)
-        apo.send(downstream.addr, "fwd", apo.self_address(),
-                 skt, cmd, args, skt_callback)
-
-        return true
-      end,
-    response =
-      function(uconn, head, body)
+  binary = -- Downstream is binary.
+    function(downstream, skt, cmd, args, skt_callback)
+      local function response(head, body)
         local msg = head ..
                     (body.ext or "") ..
                     (body.key or "") ..
                     (body.data or "")
 
-        return sock_send(uconn, msg)
+        return sock_send(skt, msg)
       end
-  }
+
+      apo.send(downstream.addr, "fwd", apo.self_address(),
+               skt, cmd, args, skt_callback)
+
+      return true
+    end
 }
 
 ------------------------------------------------------
@@ -55,8 +50,8 @@ local function forward_simple(pool, skt, req, args)
   local downstream = pool.choose(args.key)
   if downstream and
      downstream.addr then
-    if b2x[downstream.kind].request(downstream, skt,
-                                    pack.opcode(req, 'request'), args) then
+    if b2x[downstream.kind](downstream, skt,
+                            pack.opcode(req, 'request'), args) then
       return apo.recv()
     end
   end
@@ -75,8 +70,8 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
 
   pool.each(
     function(downstream)
-      if b2x[downstream.kind].request(downstream, false,
-                                      opcode, args, skt_callback) then
+      if b2x[downstream.kind](downstream, false,
+                              opcode, args, skt_callback) then
         n = n + 1
       end
     end)
