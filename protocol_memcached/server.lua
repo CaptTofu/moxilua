@@ -5,7 +5,7 @@ function upstream_session_memcached_ascii(self_addr, specs, go_data, upstream_sk
     if req then
       local itr = string.gfind(req, "%S+")
       local cmd = itr()
-      if cmd then
+      if cmd and string.len(cmd) > 1 then
         local spec = specs[cmd]
         if spec then
           if not spec(go_data, upstream_skt, cmd, iter_array(itr)) then
