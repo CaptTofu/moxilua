@@ -9,7 +9,9 @@ For example, on Mac OSX:
 
 $ sudo port install lua
 
-Then, get luarocks and make/install it.
+Then, get luarocks:
+
+$ sudo port install luarocks
 
 Then:
 
@@ -18,7 +20,7 @@ $ luarocks install luasocket
 Then, make sure LUA_PATH is setup right.  For example,
 somewhere in my ~/.profile file, I have:
 
-export LUA_PATH="/usr/local/share/lua/5.1//?.lua;/usr/local/share/lua/5.1//?/init.lua;$LUA_PATH"
+export LUA_PATH=".//?.lua;/usr/local/share/lua/5.1//?.lua;/usr/local/share/lua/5.1//?/init.lua;$LUA_PATH"
 
 To get a lua REPL with luarocks enabled, use:
 
