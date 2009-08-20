@@ -1,22 +1,19 @@
 -- Here, dconn means downstream connection,
 -- and, uconn means upstream connection.
 --
-local function spawn_downstream(location, client_specs, done_func)
+local function spawn_downstream(location, done_func)
   local host, port, dconn, err = connect(location)
 
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local what, notify_addr, recv_callback, cmd, args = apo.recv()
+        local what, notify_addr, response, handler, args = apo.recv()
         if what == "fwd" then
-          local handler = client_specs[cmd]
-          if handler then
-            args = args or {}
+          args = args or {}
 
-            if not handler(dconn, recv_callback, args) then
-              dconn:close()
-              dconn = nil
-            end
+          if not handler(dconn, response, args) then
+            dconn:close()
+            dconn = nil
           end
         elseif what == "close" then
           dconn:close()
@@ -35,16 +32,7 @@ end
 
 ------------------------------------------
 
-memcached_downstream_client_specs = {
-  ascii  = memcached_client_ascii,
-  binary = memcached_client_binary
-}
-
-------------------------------------------
-
-function memcached_pool(locations, map_specs)
-  map_specs = map_specs or memcached_downstream_client_specs
-
+function memcached_pool(locations)
   local downstreams = {}
 
   local function done_func(downstream_addr)
@@ -61,7 +49,7 @@ function memcached_pool(locations, map_specs)
       local x = locations[k]
       if x then
         local downstream_addr =
-          spawn_downstream(x.location, map_specs[x.kind], done_func)
+          spawn_downstream(x.location, done_func)
 
         downstream = {
           location = x.location,     -- eg, "localhost:11211"

@@ -45,7 +45,7 @@ local b2x = {
       end
 
       apo.send(downstream.addr, "fwd", apo.self_address(),
-               response, cmd, args)
+               response, memcached_client_binary[cmd], args)
 
       return true
     end

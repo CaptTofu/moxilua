@@ -20,7 +20,7 @@ local a2x = {
       end
 
       apo.send(downstream.addr, "fwd", apo.self_address(),
-               response, cmd, args)
+               response, memcached_client_ascii[cmd], args)
 
       return true
     end,
@@ -155,4 +155,3 @@ memcached_server_ascii_proxy = {
       return false
     end
 }
-
