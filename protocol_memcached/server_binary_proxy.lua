@@ -13,28 +13,41 @@ local SUCCESS = mpb.response_stats.SUCCESS
 --
 local b2x = {
   ascii = -- Downstream is ascii.
-    function(downstream, skt, cmd, args)
+    function(downstream, skt, cmd, args, response_filter)
       local function response(head, body)
-        return (head and
-                sock_send(skt, head .. "\r\n")) and
-               ((not body) or
-                sock_send(skt, body.data .. "\r\n"))
+        if (not response_filter) or
+           response_filter(head, body) then
+          return skt and
+                 (head and
+                  sock_send(skt, head .. "\r\n")) and
+                 ((not body) or
+                  sock_send(skt, body.data .. "\r\n"))
+        end
+
+        return true
       end
     end,
 
   binary = -- Downstream is binary.
-    function(downstream, skt, cmd, args, skt_callback)
+    function(downstream, skt, cmd, args, response_filter)
       local function response(head, body)
-        local msg = head ..
-                    (body.ext or "") ..
-                    (body.key or "") ..
-                    (body.data or "")
+        if (not response_filter) or
+           response_filter(head, body) then
+          if skt then
+            local msg = head ..
+                        (body.ext or "") ..
+                        (body.key or "") ..
+                        (body.data or "")
 
-        return sock_send(skt, msg)
+            return sock_send(skt, msg)
+          end
+        end
+
+        return true
       end
 
       apo.send(downstream.addr, "fwd", apo.self_address(),
-               skt, cmd, args, skt_callback)
+               response, cmd, args)
 
       return true
     end
@@ -61,7 +74,7 @@ end
 
 -- For binary commands that just do a broadcast scatter/gather.
 --
-local function forward_broadcast(pool, skt, req, args, skt_callback)
+local function forward_broadcast(pool, skt, req, args, response_filter)
   local opcode = pack.opcode(req, 'request')
 
   args.req = req
@@ -70,8 +83,7 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
 
   pool.each(
     function(downstream)
-      if b2x[downstream.kind](downstream, false,
-                              opcode, args, skt_callback) then
+      if b2x[downstream.kind](downstream, skt, opcode, args, response_filter) then
         n = n + 1
       end
     end)
@@ -88,7 +100,20 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
       status = SUCCESS,
       opaque = pack.opaque(req, 'request')
     })
+
   return sock_send(skt, res)
+end
+
+local function forward_broadcast_filter(opcode_filter)
+  local function response_filter(head, body)
+    return pack.opcode(head, 'response') ~= opcode_filter
+  end
+
+  local function f(pool, skt, req, args)
+    return forward_broadcast(pool, skt, req, args, response_filter)
+  end
+
+  return f
 end
 
 ------------------------------------------------------
@@ -125,28 +150,9 @@ end
 
 ------------------------------------------------------
 
-msbp[mpb.command.FLUSH] =
-  function(pool, skt, req, args)
-    return forward_broadcast(pool, skt, req, args, nil)
-  end
+msbp[mpb.command.FLUSH] = forward_broadcast_filter(mpb.command.FLUSH)
 
-msbp[mpb.command.NOOP] =
-  function(pool, skt, req, args)
-    local function skt_callback(head, body)
-      if pack.opcode(head, 'response') == mpb.command.NOOP then
-        return true
-      end
-
-      local msg = head ..
-                  (body.ext or "") ..
-                  (body.key or "") ..
-                  (body.data or "")
-
-      return sock_send(skt, msg)
-    end
-
-    return forward_broadcast(pool, skt, req, args, skt_callback)
-  end
+msbp[mpb.command.NOOP] = forward_broadcast_filter(mpb.command.NOOP)
 
 ------------------------------------------------------
 

@@ -7,25 +7,13 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
   return apo.spawn(
     function(self_addr)
       while dconn do
-        local ok = true
-
-        local what, reply_addr, uconn, cmd, args, recv_callback = apo.recv()
+        local what, notify_addr, recv_callback, cmd, args = apo.recv()
         if what == "fwd" then
-          local function recv_after_wrapper(head, body)
-            if uconn then
-              ok = ok and recv_after(uconn, head, body)
-            end
-
-            if recv_callback then
-              ok = ok and recv_callback(head, body)
-            end
-          end
-
           local handler = client_specs[cmd]
           if handler then
             args = args or {}
 
-            if not handler(dconn, recv_after_wrapper, args) then
+            if not handler(dconn, recv_callback, args) then
               dconn:close()
               dconn = nil
             end
@@ -35,8 +23,8 @@ local function spawn_downstream(location, client_specs, recv_after, done_func)
           dconn = nil
         end
 
-        if reply_addr then
-          apo.send(reply_addr, ok and dconn)
+        if notify_addr then
+          apo.send(notify_addr, dconn)
         end
       end
 

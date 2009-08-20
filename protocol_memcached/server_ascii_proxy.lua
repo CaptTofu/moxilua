@@ -2,31 +2,44 @@
 --
 local a2x = {
   ascii = -- Downstream is ascii.
-    function(downstream, skt, cmd, args)
+    function(downstream, skt, cmd, args, response_filter)
       -- The args looks like { keys = { "key1", "key2", ... } }
       --
       local function response(head, body)
-        return (head and
-                sock_send(skt, head .. "\r\n")) and
-               ((not body) or
-                sock_send(skt, body.data .. "\r\n"))
+        if (not response_filter) or
+           response_filter(head, body) then
+          return skt and
+                 (head and
+                  sock_send(skt, head .. "\r\n")) and
+                 ((not body) or
+                  sock_send(skt, body.data .. "\r\n"))
+        end
+
+        return true
       end
 
       apo.send(downstream.addr, "fwd", apo.self_address(),
-               skt, cmd, args)
+               response, cmd, args)
 
       return true
     end,
 
-  binary =  -- Downstream is binary.
-    function(downstream, skt, cmd, args)
+  binary = -- Downstream is binary.
+    function(downstream, skt, cmd, args, response_filter)
       local function response(head, body)
-        local msg = head ..
-                    (body.ext or "") ..
-                    (body.key or "") ..
-                    (body.data or "")
+        if (not response_filter) or
+           response_filter(head, body) then
+          if skt then
+            local msg = head ..
+                        (body.ext or "") ..
+                        (body.key or "") ..
+                        (body.data or "")
 
-        return sock_send(skt, msg)
+            return sock_send(skt, msg)
+          end
+        end
+
+        return true
       end
     end
 }
