@@ -1,7 +1,7 @@
 -- Here, dconn means downstream connection,
 -- and, uconn means upstream connection.
 --
-local function spawn_downstream(location, client_specs, recv_after, done_func)
+local function spawn_downstream(location, client_specs, done_func)
   local host, port, dconn, err = connect(location)
 
   return apo.spawn(
@@ -35,33 +35,16 @@ end
 
 ------------------------------------------
 
-memcached_downstream_kind = {
-  ascii = {
-    client_specs = memcached_client_ascii,
-    recv_after = function(uconn, head, body)
-      return (head and
-              sock_send(uconn, head .. "\r\n")) and
-             ((not body) or
-              sock_send(uconn, body.data .. "\r\n"))
-    end
-  },
-
-  binary = {
-    client_specs = memcached_client_binary,
-    recv_after = function(uconn, head, body)
-      local msg = head ..
-                  (body.ext or "") ..
-                  (body.key or "") ..
-                  (body.data or "")
-
-      return sock_send(uconn, msg)
-    end
-  }
+memcached_downstream_client_specs = {
+  ascii  = memcached_client_ascii,
+  binary = memcached_client_binary
 }
 
 ------------------------------------------
 
-function memcached_pool(locations)
+function memcached_pool(locations, map_specs)
+  map_specs = map_specs or memcached_downstream_client_specs
+
   local downstreams = {}
 
   local function done_func(downstream_addr)
@@ -77,20 +60,16 @@ function memcached_pool(locations)
     if not downstream then
       local x = locations[k]
       if x then
-        local kind = memcached_downstream_kind[x.kind]
-        if kind then
-          local downstream_addr =
-            spawn_downstream(x.location,
-                             kind.client_specs,
-                             kind.recv_after,
-                             done_func)
-          downstream = {
-            location = x.location,     -- eg, "localhost:11211"
-            kind     = x.kind,         -- eg, binary or ascii.
-            addr     = downstream_addr -- An apo address.
-          }
-          downstreams[k] = downstream
-        end
+        local downstream_addr =
+          spawn_downstream(x.location, map_specs[x.kind], done_func)
+
+        downstream = {
+          location = x.location,     -- eg, "localhost:11211"
+          kind     = x.kind,         -- eg, binary or ascii.
+          addr     = downstream_addr -- An apo address.
+        }
+
+        downstreams[k] = downstream
       end
     end
     return downstream
