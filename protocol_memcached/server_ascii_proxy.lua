@@ -5,13 +5,17 @@ local SUCCESS = mpb.response_status.SUCCESS
 
 -- Translators for ascii upstream to different downstreams.
 --
-local a2x -- Forward declaration needed.
+local binary_success = {}
 
-a2x = {
+binary_success[mpb.command.SET]    = "STORED\r\n"
+binary_success[mpb.command.NOOP]   = "END\r\n"
+binary_success[mpb.command.DELETE] = "DELETED\r\n"
+
+local a2x = {
   ascii = -- Downstream is ascii.
     function(downstream, skt, cmd, args, response_filter)
-      -- The args looks like { keys = { "key1", "key2", ... } }
-      -- or like { key = "key1", flag = 0, expire = 0, data = "hello" }
+      -- The args looks like { keys = { "a", "b", "c", ... } }
+      -- or like { key = "a", flag = 0, expire = 0, data = "hello" }
       --
       local function response(head, body)
         if (not response_filter) or
@@ -51,7 +55,7 @@ a2x = {
                 return sock_send(skt, "END\r\n")
               end
 
-              local reply = a2x.binary_success[opcode]
+              local reply = binary_success[opcode]
               if reply then
                 return sock_send(skt, reply)
               end
@@ -70,14 +74,8 @@ a2x = {
                response, memcached_client_binary[cmd], args)
 
       return true
-    end,
-
-  binary_success = {}
+    end
 }
-
-a2x.binary_success[mpb.command.SET] = "STORED\r\n"
-a2x.binary_success[mpb.command.NOOP] = "END\r\n"
-a2x.binary_success[mpb.command.DELETE] = "DELETED\r\n"
 
 -----------------------------------
 
