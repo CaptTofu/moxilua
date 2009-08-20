@@ -84,7 +84,7 @@ local function binary_vocal_cmd(conn, recv_callback, args)
   local req = args.req
   local key = args.key
   local ext = args.ext
-  local msg = req .. (ext or "") .. (key or "") .. (args.data or "")
+  local msg = pack.pack_message(req, key, ext, args.data)
 
   local ok, err = sock_send(conn, msg)
   if not ok then
@@ -121,7 +121,7 @@ local function binary_quiet_cmd(conn, recv_callback, args)
   local req = args.req
   local key = args.key
   local ext = args.ext
-  local msg = req .. (ext or "") .. (key or "") .. (args.data or "")
+  local msg = pack.pack_message(req, key, ext, args.data)
 
   return sock_send(conn, msg)
 end
