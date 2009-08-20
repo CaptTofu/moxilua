@@ -1,6 +1,13 @@
+local mpb  = memcached_protocol_binary
+local pack = memcached_protocol_binary.pack
+
+local SUCCESS = mpb.response_status.SUCCESS
+
 -- Translators for ascii upstream to different downstreams.
 --
-local a2x = {
+local a2x -- Forward declaration needed.
+
+a2x = {
   ascii = -- Downstream is ascii.
     function(downstream, skt, cmd, args, response_filter)
       -- The args looks like { keys = { "key1", "key2", ... } }
@@ -31,18 +38,46 @@ local a2x = {
         if (not response_filter) or
            response_filter(head, body) then
           if skt then
-            local mpb = memcached_protocol_binary
+            if pack.status(head) == SUCCESS then
+              local opcode = pack.opcode(head, 'response')
+              if opcode == mpb.command.GETKQ or
+                 opcode == mpb.command.GETK then
+                return sock_send(skt, "VALUE " ..
+                                 body.key .. "\r\n" ..
+                                 body.data .. "\r\n")
+              end
 
-            local msg = mpb.pack.pack_message(head, body.key, body.ext, body.data)
+              if opcode == mpb.command.NOOP then
+                return sock_send(skt, "END\r\n")
+              end
 
-            return sock_send(skt, msg)
+              local reply = a2x.binary_success[opcode]
+              if reply then
+                return sock_send(skt, reply)
+              end
+
+              return sock_send(skt, "OK\r\n")
+            end
+
+            return sock_send(skt, "ERROR " .. body.data .. "\r\n")
           end
         end
 
         return true
       end
-    end
+
+      apo.send(downstream.addr, "fwd", apo.self_address(),
+               response, memcached_client_binary[cmd], args)
+
+      return true
+    end,
+
+  binary_success = {}
 }
+
+a2x.binary_success[mpb.command.SET] = "STORED\r\n"
+a2x.binary_success[mpb.command.NOOP] = "END\r\n"
+a2x.binary_success[mpb.command.DELETE] = "DELETED\r\n"
 
 -----------------------------------
 
