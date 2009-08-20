@@ -22,7 +22,7 @@ local a2x = {
 
   binary = { -- Downstream is binary.
     request =
-      function(data, skt, cmd, arr)
+      function(downstream, skt, cmd, args)
       end,
     response =
       function(uconn, head, body)

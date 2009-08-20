@@ -9,6 +9,44 @@ local pack = mpb.pack
 
 local SUCCESS = mpb.response_stats.SUCCESS
 
+-- Translators for binary upstream to different downstreams.
+--
+local b2x = {
+  ascii = { -- Downstream is ascii.
+    request =
+      function(downstream, skt, cmd, args)
+      end,
+    response =
+      function(uconn, head, body)
+        return (head and
+                sock_send(uconn, head .. "\r\n")) and
+               ((not body) or
+                sock_send(uconn, body.data .. "\r\n"))
+      end
+  },
+
+  binary = { -- Downstream is binary.
+    request =
+      function(downstream, skt, cmd, args, skt_callback)
+        -- The args looks like { keys = { "key1", "key2", ... } }
+        --
+        apo.send(downstream.addr, "fwd", apo.self_address(),
+                 skt, cmd, args, skt_callback)
+
+        return true
+      end,
+    response =
+      function(uconn, head, body)
+        local msg = head ..
+                    (body.ext or "") ..
+                    (body.key or "") ..
+                    (body.data or "")
+
+        return sock_send(uconn, msg)
+      end
+  }
+}
+
 ------------------------------------------------------
 
 -- For binary commands that just do a simple command forward.
@@ -19,10 +57,10 @@ local function forward_simple(pool, skt, req, args)
   local downstream = pool.choose(args.key)
   if downstream and
      downstream.addr then
-    apo.send(downstream.addr, "fwd", apo.self_address(),
-             skt, pack.opcode(req, 'request'), args)
-
-    return apo.recv()
+    if b2x[downstream.kind].request(downstream, skt,
+                                    pack.opcode(req, 'request'), args) then
+      return apo.recv()
+    end
   end
 
   return false -- TODO: send err response instead?
@@ -36,11 +74,13 @@ local function forward_broadcast(pool, skt, req, args, skt_callback)
   args.req = req
 
   local n = 0
+
   pool.each(
     function(downstream)
-      apo.send(downstream.addr, "fwd", apo.self_address(),
-               false, opcode, args, skt_callback)
-      n = n + 1
+      if b2x[downstream.kind].request(downstream, false,
+                                      opcode, args, skt_callback) then
+        n = n + 1
+      end
     end)
 
   local oks = 0 -- TODO: Do something with oks count.
