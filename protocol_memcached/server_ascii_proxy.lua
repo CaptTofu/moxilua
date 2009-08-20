@@ -30,10 +30,9 @@ local a2x = {
         if (not response_filter) or
            response_filter(head, body) then
           if skt then
-            local msg = head ..
-                        (body.ext or "") ..
-                        (body.key or "") ..
-                        (body.data or "")
+            local mpb = memcached_protocol_binary
+
+            local msg = mpb.pack.pack_message(head, body.key, body.ext, body.data)
 
             return sock_send(skt, msg)
           end

@@ -34,10 +34,8 @@ local b2x = {
         if (not response_filter) or
            response_filter(head, body) then
           if skt then
-            local msg = head ..
-                        (body.ext or "") ..
-                        (body.key or "") ..
-                        (body.data or "")
+            local msg =
+              pack.pack_message(head, body.key, body.ext, body.data)
 
             return sock_send(skt, msg)
           end

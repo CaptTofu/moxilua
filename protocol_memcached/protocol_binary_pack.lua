@@ -96,16 +96,22 @@ end
 
 ------------------------------------------------------
 
+local function pack_message(hdr, key, ext, data)
+  return hdr .. (ext or "") .. (key or "") .. (data or "")
+end
+
+------------------------------------------------------
+
 local function create_request(opcode, args)
   args = args or {}
-  local h = create_header('request', opcode, args)
-  return h .. (args.ext or "") .. (args.key or "") .. (args.data or "")
+  return pack_message(create_header('request', opcode, args),
+                      args.key, args.ext, args.data)
 end
 
 local function create_response(opcode, args)
   args = args or {}
-  local h = create_header('response', opcode, args)
-  return h .. (args.ext or "") .. (args.key or "") .. (args.data or "")
+  return pack_message(create_header('response', opcode, args),
+                      args.key, args.ext, args.data)
 end
 
 ------------------------------------------------------
@@ -246,6 +252,8 @@ end
 ------------------------------------------------------
 
 mpb.pack = {
+  pack_message = pack_message,
+
   create_header   = create_header,
   create_request  = create_request,
   create_response = create_response,
