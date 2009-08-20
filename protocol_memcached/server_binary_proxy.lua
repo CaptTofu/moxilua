@@ -28,8 +28,6 @@ local b2x = {
   binary = { -- Downstream is binary.
     request =
       function(downstream, skt, cmd, args, skt_callback)
-        -- The args looks like { keys = { "key1", "key2", ... } }
-        --
         apo.send(downstream.addr, "fwd", apo.self_address(),
                  skt, cmd, args, skt_callback)
 
