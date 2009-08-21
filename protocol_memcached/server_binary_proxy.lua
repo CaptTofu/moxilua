@@ -13,23 +13,66 @@ local SUCCESS = mpb.response_stats.SUCCESS
 --
 local b2x = {
   ascii = -- Downstream is ascii.
-    function(downstream, skt, cmd, args, response_filter)
+    function(downstream, skt, opcode, args, response_filter)
       local function response(head, body)
         if (not response_filter) or
            response_filter(head, body) then
-          return skt and
-                 (head and
-                  sock_send(skt, head .. "\r\n")) and
-                 ((not body) or
-                  sock_send(skt, body.data .. "\r\n"))
+          if skt then
+            if head == "OK" or
+               head == "END" or
+               head == "STORED" or
+               head == "DELETED" then
+              if opcode ~= mpb.command.NOOP and
+                 opcode ~= mpb.command.FLUSH then
+                local res =
+                  pack.create_response(opcode, {
+                    status = SUCCESS,
+                    opaque = pack.opaque(args.req, 'request')
+                  })
+
+                return sock_send(skt, res)
+              end
+
+              return true -- Swallow FLUSH broadcast replies.
+            end
+
+            local vfound, vlast, key = string.find(head, "^VALUE (%S+)")
+            if vfound and key then
+              local res =
+                pack.create_response(opcode, {
+                  status = SUCCESS,
+                  opaque = pack.opaque(args.req, 'request'),
+                  key    = key,
+                  ext    = string.char(0, 0, 0, 0),
+                  data   = body.data
+                })
+
+              return sock_send(skt, res)
+            end
+
+            local res =
+              pack.create_response(opcode, {
+                status = mpb.response_stats.EINVAL,
+                key    = key,
+                data   = body.data,
+                opaque = pack.opaque(args.req, 'request')
+              })
+
+            return sock_send(skt, res)
+          end
         end
 
         return true
       end
+
+      apo.send(downstream.addr, "fwd", apo.self_address(),
+               response, memcached_client_ascii[opcode], args)
+
+      return true
     end,
 
   binary = -- Downstream is binary.
-    function(downstream, skt, cmd, args, response_filter)
+    function(downstream, skt, opcode, args, response_filter)
       local function response(head, body)
         if (not response_filter) or
            response_filter(head, body) then
@@ -45,7 +88,7 @@ local b2x = {
       end
 
       apo.send(downstream.addr, "fwd", apo.self_address(),
-               response, memcached_client_binary[cmd], args)
+               response, memcached_client_binary[opcode], args)
 
       return true
     end
@@ -81,7 +124,8 @@ local function forward_broadcast(pool, skt, req, args, response_filter)
 
   pool.each(
     function(downstream)
-      if b2x[downstream.kind](downstream, skt, opcode, args, response_filter) then
+      if b2x[downstream.kind](downstream, skt,
+                              opcode, args, response_filter) then
         n = n + 1
       end
     end)
@@ -148,42 +192,42 @@ end
 
 ------------------------------------------------------
 
-msbp[mpb.command.FLUSH] = forward_broadcast_filter(mpb.command.FLUSH)
+msbp[c.FLUSH] = forward_broadcast_filter(c.FLUSH)
 
-msbp[mpb.command.NOOP] = forward_broadcast_filter(mpb.command.NOOP)
+msbp[c.NOOP] = forward_broadcast_filter(c.NOOP)
 
 ------------------------------------------------------
 
-msbp[mpb.command.QUIT] =
+msbp[c.QUIT] =
   function(pool, skt, req, args)
     return false
   end
 
-msbp[mpb.command.QUITQ] = msbp[mpb.command.QUIT]
+msbp[c.QUITQ] = msbp[c.QUIT]
 
 ------------------------------------------------------
 
-msbp[mpb.command.VERSION] =
+msbp[c.VERSION] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.STAT] =
+msbp[c.STAT] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.SASL_LIST_MECHS] =
+msbp[c.SASL_LIST_MECHS] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.SASL_AUTH] =
+msbp[c.SASL_AUTH] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.SASL_STEP] =
+msbp[c.SASL_STEP] =
   function(pool, skt, req, args)
   end
 
-msbp[mpb.command.BUCKET] =
+msbp[c.BUCKET] =
   function(pool, skt, req, args)
   end
 
