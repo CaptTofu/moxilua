@@ -19,6 +19,10 @@ print("start")
 
 host = "127.0.0.1"
 
+-- An in-memory dictionary for when we are a memcached server.
+-- The extra level of indirection with the sub-dict ("tbl")
+-- allows for easy flush_all implementation.
+--
 dict = { tbl = {} }
 
 ---------------
