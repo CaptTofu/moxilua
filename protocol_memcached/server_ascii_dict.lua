@@ -70,8 +70,9 @@ memcached_server_ascii_dict = {
         data = dict.tbl[key]
         if data then
           local ok, err = sock_send(skt, "VALUE " ..
-                                         key .. "\r\n" ..
-                                         data .. "\r\n")
+                                    key .. " 0 " ..
+                                    string.len(data) .. "\r\n" ..
+                                    data .. "\r\n")
           if not ok then
             return ok, err
           end

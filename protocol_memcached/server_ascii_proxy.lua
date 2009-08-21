@@ -47,7 +47,8 @@ local a2x = {
               if opcode == mpb.command.GETKQ or
                  opcode == mpb.command.GETK then
                 return sock_send(skt, "VALUE " ..
-                                 body.key .. "\r\n" ..
+                                 body.key .. " 0 " ..
+                                 string.len(body.data) .. "\r\n" ..
                                  body.data .. "\r\n")
               end
 
