@@ -43,7 +43,7 @@ local function dict_update(dict, skt, cmd, arr)
   if key and flag and expire and size then
     size = tonumber(size)
     if size >= 0 then
-      local data, err = sock_recv(skt, tonumber(size) + 2)
+      local data, err = sock_recv(skt, tonumber(size) + 2) -- 2 for CR/NL.
       if not data then
         return data, err
       end

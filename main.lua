@@ -51,7 +51,7 @@ apo.spawn(upstream_accept, server,
 
 ---------------
 
--- Start ascii self server.
+-- Start ascii self server (in-memory dict).
 server = socket.bind(host, 11311)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_ascii, {
@@ -59,7 +59,7 @@ apo.spawn(upstream_accept, server,
             data = dict
           })
 
--- Start binary self server.
+-- Start binary self server (in-memory dict).
 server = socket.bind(host, 11411)
 apo.spawn(upstream_accept, server,
           upstream_session_memcached_binary, {
