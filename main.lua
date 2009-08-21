@@ -17,18 +17,6 @@ print("start")
 
 ----------------------------------------
 
-function upstream_accept(self_addr, server_skt, sess_actor, env)
-  local session_handler = function(upstream_skt)
-    upstream_skt:settimeout(0)
-
-    apo.spawn(sess_actor, env, upstream_skt)
-  end
-
-  asock.loop_accept(self_addr, server_skt, session_handler)
-end
-
-----------------------------------------
-
 host = "127.0.0.1"
 
 dict = { tbl = {} }
