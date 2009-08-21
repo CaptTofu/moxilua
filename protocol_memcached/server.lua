@@ -1,4 +1,4 @@
-function upstream_session_memcached_ascii(self_addr, specs, env, upstream_skt)
+function upstream_session_memcached_ascii(self_addr, env, upstream_skt)
   local req = true
   while req do
     req = asock.recv(self_addr, upstream_skt, "*l")
@@ -6,7 +6,7 @@ function upstream_session_memcached_ascii(self_addr, specs, env, upstream_skt)
       local itr = string.gfind(req, "%S+")
       local cmd = itr()
       if cmd and string.len(cmd) > 1 then
-        local spec = specs[cmd]
+        local spec = env.specs[cmd]
         if spec then
           if not spec(env.data, upstream_skt, cmd, iter_array(itr)) then
             req = nil
@@ -23,7 +23,7 @@ end
 
 ------------------------------------------------------
 
-function upstream_session_memcached_binary(self_addr, specs, env, upstream_skt)
+function upstream_session_memcached_binary(self_addr, env, upstream_skt)
   local mpb = memcached_protocol_binary
   local req = true
   local err, key, ext, data
@@ -32,7 +32,7 @@ function upstream_session_memcached_binary(self_addr, specs, env, upstream_skt)
     req, err, args = mpb.pack.recv_request(upstream_skt)
     if req then
       local opcode = mpb.pack.opcode(req, 'request')
-      local spec = specs[opcode]
+      local spec = env.specs[opcode]
       if spec then
         if not spec(env.data, upstream_skt, req, args) then
           req = nil
