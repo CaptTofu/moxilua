@@ -8,6 +8,8 @@ local network_bytes = pru.network_bytes
 
 -- Create a closure that does an ascii update.
 --
+-- For example, the cmd might be "set", "add", "replace", etc
+--
 local function update_create(cmd)
   return function(conn, recv_callback, args, value)
            return sock_send_recv(conn,
