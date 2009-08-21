@@ -47,11 +47,15 @@ memcached_client_ascii = {
 
         local data = nil
 
-        if string.find(line, "^VALUE ") then
-          data, err = sock_recv(conn)
+        local vfound, vlast, key, flag, size =
+          string.find(line, "^VALUE (%S+) (%d+) (%d+)")
+        if vfound and key and flag and size then
+          data, err = sock_recv(conn, tonumber(size) + 2)
           if not data then
             return data, err
           end
+
+          data = string.sub(data, 1, -3)
         end
 
         if recv_callback then
