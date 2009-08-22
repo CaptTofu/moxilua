@@ -25,6 +25,26 @@ end
 
 ----------------------------------------------------
 
+--
+-- Create a closure that does an ascii increment or decrement.
+--
+local function arith_create(cmd)
+  return function(conn, recv_callback, args, value)
+    if value then
+      value = tonumber(value)
+    else 
+      value = 1
+    end
+    return sock_send_recv(conn,
+        cmd .. " " ..
+        (args.key) .. " " ..
+        (args.amount or 0) .. "\r\n",
+        recv_callback)
+    end
+end
+
+----------------------------------------------------
+
 memcached_client_ascii = {
   get =
     function(conn, recv_callback, args)
@@ -69,6 +89,8 @@ memcached_client_ascii = {
   replace = update_create("replace"),
   append  = update_create("append"),
   prepend = update_create("prepend"),
+  incr    = arith_create("incr"),
+  decr    = arith_create("decr"),
 
   delete =
     function(conn, recv_callback, args)

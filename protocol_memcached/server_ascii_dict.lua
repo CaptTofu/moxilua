@@ -32,6 +32,23 @@ local dict_update_map = {
     end
 }
 
+local dict_arith_map = {
+  incr =
+    function(dict, key, amount)
+      local num = tonumber(dict.tbl[key])
+      local num = num + amount
+      dict.tbl[key] = tostring(num)
+      return true, dict.tbl[key] 
+    end,
+  decr =
+    function(dict, key, amount)
+      local num = tonumber(dict.tbl[key])
+      local num = num - tonumber(amount)
+      dict.tbl[key] = tostring(num)
+      return true, dict.tbl[key] 
+    end
+}
+
 ---------------------------------------------------
 
 local function dict_update(dict, skt, cmd, arr)
@@ -61,6 +78,29 @@ end
 
 ---------------------------------------------------
 
+local function dict_arith(dict, skt, cmd, arr)
+  local key    = arr[1]
+  local amount = arr[2]
+
+  if key then
+    if amount then
+      amount = tonumber(amount)
+    else 
+      amount = 1
+    end
+
+    local ok, msg =
+      dict_arith_map[cmd](dict, key, amount)
+
+    return sock_send(skt, msg .. "\r\n")
+  end
+
+  return sock_send(skt, "ERROR\r\n")
+end
+
+
+---------------------------------------------------
+
 memcached_server_ascii_dict = {
   get =
     function(dict, skt, cmd, arr)
@@ -86,6 +126,8 @@ memcached_server_ascii_dict = {
   replace = dict_update,
   append  = dict_update,
   prepend = dict_update,
+  incr    = dict_arith,
+  decr    = dict_arith,
 
   delete =
     function(dict, skt, cmd, arr)
