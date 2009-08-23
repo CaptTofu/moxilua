@@ -78,40 +78,36 @@ assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
 expected()
 
 fresh()
-assert(client.delete(c, got, {key = "a"}) == "DELETED")
-expected("DELETED")
+assert(client.set(c, got, {key  = "a",
+                           data = "1"}) == "STORED")
+expected("STORED")
 
---fresh()
---assert(client.set(c, got, {key  = "a",
---                           data = "1"}) == "STORED")
---expected("STORED")
---
---fresh()
---assert(client.incr(c, got, {key  = "a",
---                           data = "1"}) == "2")
---expected("2")
---
---fresh()
---assert(client.incr(c, got, {key  = "a",
---                           data = "10"}) == "12")
---expected("12")
---
---fresh()
---assert(client.decr(c, got, {key  = "a",
---                           data = "1"}) == "11")
---expected("11")
---
---fresh()
---assert(client.decr(c, got, {key  = "a",
---                           data = "10"}) == "1")
---expected("1")
---
---fresh()
---assert(client.incr(c, got, {key  = "a" }) == "2")
---expected("2")
---
---fresh()
---assert(client.decr(c, got, {key  = "a" }) == "1")
---expected("1")
---
---p("done!")
+fresh()
+assert(client.incr(c, got, {key  = "a",
+                           amount = "1"}) == "2")
+expected("2")
+
+fresh()
+assert(client.incr(c, got, {key  = "a",
+                           amount = "10"}) == "12")
+expected("12")
+
+fresh()
+assert(client.decr(c, got, {key  = "a",
+                           amount = "1"}) == "11")
+expected("11")
+
+fresh()
+assert(client.decr(c, got, {key  = "a",
+                           amount = "10"}) == "1")
+expected("1")
+
+fresh()
+assert(client.incr(c, got, {key  = "a" , amount = "1"}) == "2")
+expected("2")
+
+fresh()
+assert(client.decr(c, got, {key  = "a" , amount = "1"}) == "1")
+expected("1")
+
+p("done!")
