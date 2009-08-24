@@ -216,3 +216,6 @@ memcached_server_ascii_proxy = {
       return false
     end
 }
+
+memcached_server.ascii.proxy = memcached_server_ascii_proxy
+
