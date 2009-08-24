@@ -6,8 +6,15 @@ require('protocol_memcached/protocol_binary')
 require('protocol_memcached/protocol_binary_prep')
 require('protocol_memcached/protocol_binary_pack')
 
+--------------------------------------------
+
 require('protocol_memcached/client_binary')
 require('protocol_memcached/client_ascii')
+
+memcached_client = {
+  ascii = memcached_client_ascii,
+  binary = memcached_client_binary
+}
 
 --------------------------------------------
 
