@@ -105,3 +105,22 @@ if false then
   end
 end
 
+--------------------------------------------
+
+require 'protocol_gearman/PROTOCOL'
+
+for k, v in pairs(PROTOCOL_gearman.request) do
+  print(k, v)
+  for i, y in pairs(v) do
+    print('-', i, y)
+    for j, z in pairs(y) do
+      if type(z) == 'table' then
+        for h, w in pairs(z) do
+          print('---', j, h, w)
+        end
+      else
+        print('--', j, z)
+      end
+    end
+  end
+end
