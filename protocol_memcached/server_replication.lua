@@ -8,10 +8,6 @@ local function response_filter_all(head, body)
   return false
 end
 
-local function response_filter_END(head, body)
-  return head ~= "END"
-end
-
 local function simple_replicate(success)
   return function(pools, skt, cmd, arr)
     local key = arr[1]
@@ -72,6 +68,17 @@ end
 memcached_server_replication = {
   get =
     function(pools, skt, cmd, arr)
+      local seen = {}
+
+      local filter_END_repeats =
+        function(head, body)
+          if head == "END" or seen[head] then
+            return false
+          end
+          seen[head] = true
+          return true
+        end
+
       for i = 1, #pools do
         local pool = pools[i]
 
@@ -81,7 +88,7 @@ memcached_server_replication = {
         for downstream, keys in pairs(groups) do
           if msa.proxy_a2x[downstream.kind](downstream, skt,
                                             "get", { keys = keys },
-                                            response_filter_END) then
+                                            filter_END_repeats) then
             n = n + 1
           end
         end
