@@ -11,6 +11,7 @@ require('protocol_memcached/server_ascii_dict')
 require('protocol_memcached/server_ascii_proxy')
 require('protocol_memcached/server_binary_dict')
 require('protocol_memcached/server_binary_proxy')
+require('protocol_memcached/server_replication')
 require('protocol_memcached/pool')
 
 print("start")
@@ -137,6 +138,23 @@ apo.spawn(upstream_accept, server,
               memcached_pool({
                 { location = "127.0.0.1:11311", kind = "ascii" }
               })
+          })
+
+---------------
+
+-- Start replicating ascii proxy to memcached.
+server = socket.bind(host, 11500)
+apo.spawn(upstream_accept, server,
+          upstream_session_memcached_ascii, {
+            specs = memcached_server_replication,
+            data = {
+              memcached_pool({
+                { location = "127.0.0.1:11211", kind = "ascii" }
+              }),
+              memcached_pool({
+                { location = "127.0.0.1:11311", kind = "ascii" }
+              })
+            }
           })
 
 ----------------------------------------
