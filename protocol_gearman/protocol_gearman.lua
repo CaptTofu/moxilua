@@ -86,41 +86,53 @@ for id, name, type, sides, type2, sides2 in
   end
 end
 
-if false then
-  print('--------------')
-  for k, v in pairs(protocol_gearman.Client.REQ) do
-    print(k, v)
-  end
-  print('---------')
-  for k, v in pairs(protocol_gearman.Client.RES) do
-    print(k, v)
-  end
-  print('--------------')
-  for k, v in pairs(protocol_gearman.Worker.REQ) do
-    print(k, v)
-  end
-  print('---------')
-  for k, v in pairs(protocol_gearman.Worker.RES) do
-    print(k, v)
-  end
+protocol_gearman.client = protocol_gearman.Client
+protocol_gearman.worker = protocol_gearman.Worker
+
+--------------------------------------------
+
+if true then
+  require('test_base')
+
+  print('------------------------------')
+  printa(protocol_gearman.client)
+  print('------------------------------')
+  printa(protocol_gearman.worker)
 end
 
 --------------------------------------------
 
 require 'protocol_gearman/PROTOCOL'
 
-for k, v in pairs(PROTOCOL_gearman.request) do
-  print(k, v)
-  for i, y in pairs(v) do
-    print('-', i, y)
-    for j, z in pairs(y) do
-      if type(z) == 'table' then
-        for h, w in pairs(z) do
-          print('---', j, h, w)
+for sides, v in pairs(PROTOCOL_gearman.request) do
+  for side in string.gfind(sides, "(%a+)") do
+    for x, y in pairs(v) do
+      local cmds   = nil
+      local params = {}
+
+      local function cmds_emit()
+        if cmds and #params > 0 then
+          print('-----------------')
+          for cmd in string.gfind(cmds, "([%a_]+)") do
+            print('----------')
+            print(side, cmd)
+            printa(params)
+          end
         end
-      else
-        print('--', j, z)
       end
+
+      for z, w in pairs(y) do
+        if type(w) == 'table' then
+          for j, param in pairs(w) do
+            params[#params + 1 ] = param
+          end
+        else
+          cmds_emit()
+          cmds = w
+        end
+      end
+
+      cmds_emit()
     end
   end
 end
