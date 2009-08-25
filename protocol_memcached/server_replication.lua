@@ -4,20 +4,86 @@ local pack = mpb.pack
 
 local SUCCESS = mpb.response_stats.SUCCESS
 
-local function response_filter_all(head, body)
-  return false
+-- Creates a function that replicates a generic msg
+-- request across all pools.  Sends the success_msg back
+-- upstream if there are at least min_replicas number of
+-- downstream successes.  If the input min_replicas is <= 0
+-- or nil then all downstreams must succeed before the
+-- success_msg is sent.  Otherwise an ERROR is sent.
+--
+-- Note that #pools might be > #min_replicas, which is
+-- useful to have lots of replicas, but not have to wait
+-- for acknowledgements from all of them.
+--
+local function create_replicator(success_msg, min_replicas)
+  min_replicas = min_replicas or 0
+
+  return function(pools, skt, cmd, msg)
+    -- Broadcast the update request to all pools.
+    --
+    local n = 0 -- Tracks # of requests made.
+
+    for i = 1, #pools do
+      local pool = pools[i]
+
+      if msg.key then
+        local downstream = pool.choose(msg.key)
+        if downstream and
+           downstream.addr then
+          if msa.proxy_a2x[downstream.kind](downstream, false,
+                                            cmd, msg) then
+            n = n + 1
+          end
+        end
+      else
+        pool.each(function(downstream)
+                    if msa.proxy_a2x[downstream.kind](downstream, false,
+                                                      cmd, msg) then
+                      n = n + 1
+                    end
+                  end)
+      end
+    end
+
+    -- Wait for replies, but opportunistically send an
+    -- early success_msg as soon as we can.
+    --
+    if min_replicas <= 0 then
+      min_replicas = n
+    end
+
+    local sent = nil
+    local err  = nil
+    local oks  = 0
+
+    for i = 1, n do
+      if apo.recv() then
+        oks = oks + 1
+      end
+
+      if (not sent) and (oks >= min_replicas) then
+        sent, err = sock_send(skt, success_msg)
+      end
+    end
+
+    if sent then
+      return sent, err
+    end
+
+    if oks >= min_replicas then
+      return sock_send(skt, success_msg)
+    end
+
+    return sock_send(skt, "ERROR\r\n")
+  end
 end
 
 -- Creates a function that replicates a key-based update
--- request across all pools.  Sends the success_msg back
--- upstream if there are at least min_replicas downstream
--- successes.  If the input min_replicas is <= 0 or nil then all
--- downstreams must succeed before success_msg is sent.
+-- request across all pools, with at least min_replicas
+-- required before sending a success_msg response.
 --
--- Note that #pools might be > #min_replicas.
---
-local function update_replicate(success_msg, min_replicas)
-  min_replicas = min_replicas or 0
+local function create_update_replicator(success_msg, min_replicas)
+  local replicator = create_replicator(success_msg, min_replicas)
 
   return function(pools, skt, cmd, arr)
     local key = arr[1]
@@ -45,51 +111,7 @@ local function update_replicate(success_msg, min_replicas)
         end
       end
 
-      -- Broadcast the update request to all pools.
-      --
-      local n = 0 -- Tracks # of requests made.
-
-      for i = 1, #pools do
-        local pool = pools[i]
-
-        local downstream = pool.choose(key)
-        if downstream and
-           downstream.addr then
-          if msa.proxy_a2x[downstream.kind](downstream, skt,
-                                            cmd, msg,
-                                            response_filter_all) then
-            n = n + 1
-          end
-        end
-      end
-
-      -- Wait for replies, but opportunistically send an
-      -- early success_msg as soon as we can.
-      --
-      if min_replicas <= 0 then
-        min_replicas = n
-      end
-
-      local sent = nil
-      local oks  = 0
-
-      for i = 1, n do
-        if apo.recv() then
-          oks = oks + 1
-        end
-
-        if (not sent) and (oks >= min_replicas) then
-          sent, err = sock_send(skt, success_msg)
-        end
-      end
-
-      if sent then
-        return sent, err
-      end
-
-      if oks >= min_replicas then
-        return sock_send(skt, success_msg)
-      end
+      return replicator(pools, skt, cmd, msg)
     end
 
     return sock_send(skt, "ERROR\r\n")
@@ -171,41 +193,20 @@ memcached_server_replication = {
     end,
 
   set =
-    update_replicate("STORED\r\n"),
+    create_update_replicator("STORED\r\n", 0),
   add =
-    update_replicate("STORED\r\n"),
+    create_update_replicator("STORED\r\n", 0),
   replace =
-    update_replicate("STORED\r\n"),
+    create_update_replicator("STORED\r\n", 0),
   append =
-    update_replicate("STORED\r\n"),
+    create_update_replicator("STORED\r\n", 0),
   prepend =
-    update_replicate("STORED\r\n"),
+    create_update_replicator("STORED\r\n", 0),
   delete =
-    update_replicate("DELETED\r\n"),
+    create_update_replicator("DELETED\r\n", 0),
 
   flush_all =
-    function(pools, skt, cmd, arr)
-      local n = 0
-      for i = 1, #pools do
-        local pool = pools[i]
-
-        pool.each(function(downstream)
-                    if msa.proxy_a2x[downstream.kind](downstream, false,
-                                                      "flush_all", {}) then
-                      n = n + 1
-                    end
-                  end)
-      end
-
-      local oks = 0
-      for i = 1, n do
-        if apo.recv() then
-          oks = oks + 1
-        end
-      end
-
-      return sock_send(skt, "OK\r\n")
-    end,
+    create_replicator("OK\r\n", 0),
 
   quit =
     function(pools, skt, cmd, arr)
@@ -244,7 +245,7 @@ local a = {
 }
 
 for i = 1, #a do
-  msr[a[i]] = forward_simple
+  msr[a[i]] = nil -- TODO
 end
 
 ------------------------------------------------------
