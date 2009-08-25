@@ -10,12 +10,14 @@ end
 
 -- Creates a function that replicates a key-based update
 -- request across all pools.  Sends the success_msg back
--- upstream if there are at least replica_count downstream
--- successes.  If the input replica_count is <= 0 or nil then all
+-- upstream if there are at least min_replicas downstream
+-- successes.  If the input min_replicas is <= 0 or nil then all
 -- downstreams must succeed before success_msg is sent.
 --
-local function update_replicate(success_msg, replica_count)
-  replica_count = replica_count or 0
+-- Note that #pools might be > #min_replicas.
+--
+local function update_replicate(success_msg, min_replicas)
+  min_replicas = min_replicas or 0
 
   return function(pools, skt, cmd, arr)
     local key = arr[1]
@@ -64,8 +66,8 @@ local function update_replicate(success_msg, replica_count)
       -- Wait for replies, but opportunistically send an
       -- early success_msg as soon as we can.
       --
-      if replica_count <= 0 then
-        replica_count = n
+      if min_replicas <= 0 then
+        min_replicas = n
       end
 
       local sent = nil
@@ -76,7 +78,7 @@ local function update_replicate(success_msg, replica_count)
           oks = oks + 1
         end
 
-        if (not sent) and (oks >= replica_count) then
+        if (not sent) and (oks >= min_replicas) then
           sent, err = sock_send(skt, success_msg)
         end
       end
@@ -85,7 +87,7 @@ local function update_replicate(success_msg, replica_count)
         return sent, err
       end
 
-      if oks >= replica_count then
+      if oks >= min_replicas then
         return sock_send(skt, success_msg)
       end
     end
@@ -103,6 +105,10 @@ memcached_server_replication = {
         need[keys[i]] = (need[keys[i]] or 0) + 1
       end
 
+      -- A response filter function that tracks the number
+      -- of responses needed per key, decrementing the counts
+      -- the in the need table.
+      --
       local function filter_need(head, body)
         local vfound, vlast, key = string.find(head, "^VALUE (%S+)")
         if vfound and key then
@@ -124,6 +130,9 @@ memcached_server_replication = {
 
         local groups = group_by(keys, pool.choose)
 
+        -- Broadcast multi-get requests to the downstream servers
+        -- in a single pool.
+        --
         local n = 0
         for downstream, downstream_keys in pairs(groups) do
           if msa.proxy_a2x[downstream.kind](downstream, skt,
@@ -140,6 +149,9 @@ memcached_server_replication = {
           end
         end
 
+        -- Regenerate a new keys array based on keys
+        -- that still need values.
+        --
         keys = {}
         for key, count in pairs(need) do
           for j = 1, count do
@@ -147,6 +159,9 @@ memcached_server_replication = {
           end
         end
 
+        -- If there aren't any keys left, we can return without
+        -- having to loop through any remaining, secondary pools.
+        --
         if #keys <= 0 then
           return sock_send(skt, "END\r\n")
         end
