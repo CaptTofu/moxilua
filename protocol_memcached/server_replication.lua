@@ -8,7 +8,7 @@ local function response_filter_all(head, body)
   return false
 end
 
-local function simple_replicate(success)
+local function simple_replicate(success_msg)
   return function(pools, skt, cmd, arr)
     local key = arr[1]
     if key then
@@ -57,7 +57,7 @@ local function simple_replicate(success)
       end
 
       if oks > 0 then
-        return sock_send(skt, success)
+        return sock_send(skt, success_msg)
       end
     end
 
@@ -68,17 +68,38 @@ end
 memcached_server_replication = {
   get =
     function(pools, skt, cmd, arr)
-      local seen = {}
+      local keys = arr -- The keys might have duplicates.
+      local need = {}  -- Key'ed by string, value is integer count.
+      for i = 1, #keys do
+        need[keys[i]] = (need[keys[i]] or 0) + 1
+      end
+
+      local function filter_need(head, body)
+        local vfound, vlast, key = string.find(head, "^VALUE (%S+)")
+        if vfound and key then
+          local count = need[key]
+          if count then
+            count = count - 1
+            if count <= 0 then
+              count = nil
+            end
+            need[key] = count
+            return true
+          end
+        end
+        return false
+      end
 
       for i = 1, #pools do
         local pool = pools[i]
 
-        local groups = group_by(arr, pool.choose)
+        local groups = group_by(keys, pool.choose)
 
         local n = 0
-        for downstream, keys in pairs(groups) do
+        for downstream, downstream_keys in pairs(groups) do
           if msa.proxy_a2x[downstream.kind](downstream, skt,
-                                            "get", { keys = keys }) then
+                                            "get", { keys = downstream_keys },
+                                            filter_need) then
             n = n + 1
           end
         end
@@ -88,6 +109,17 @@ memcached_server_replication = {
           if apo.recv() then
             oks = oks + 1
           end
+        end
+
+        keys = {}
+        for key, count in pairs(need) do
+          for j = 1, count do
+            keys[#keys + 1] = key
+          end
+        end
+
+        if #keys <= 0 then
+          return sock_send(skt, "END\r\n")
         end
       end
 
