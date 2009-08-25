@@ -70,15 +70,6 @@ memcached_server_replication = {
     function(pools, skt, cmd, arr)
       local seen = {}
 
-      local filter_END_repeats =
-        function(head, body)
-          if head == "END" or seen[head] then
-            return false
-          end
-          seen[head] = true
-          return true
-        end
-
       for i = 1, #pools do
         local pool = pools[i]
 
@@ -87,8 +78,7 @@ memcached_server_replication = {
         local n = 0
         for downstream, keys in pairs(groups) do
           if msa.proxy_a2x[downstream.kind](downstream, skt,
-                                            "get", { keys = keys },
-                                            filter_END_repeats) then
+                                            "get", { keys = keys }) then
             n = n + 1
           end
         end
