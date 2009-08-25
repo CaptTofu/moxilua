@@ -8,7 +8,15 @@ local function response_filter_all(head, body)
   return false
 end
 
-local function simple_replicate(success_msg)
+-- Creates a function that replicates a key-based update
+-- request across all pools.  Sends the success_msg back
+-- upstream if there are at least replica_count downstream
+-- successes.  If the input replica_count is <= 0 or nil then all
+-- downstreams must succeed before success_msg is sent.
+--
+local function update_replicate(success_msg, replica_count)
+  replica_count = replica_count or 0
+
   return function(pools, skt, cmd, arr)
     local key = arr[1]
     if key then
@@ -19,6 +27,8 @@ local function simple_replicate(success_msg)
       local size   = arr[4]
       local data   = nil
 
+      -- Read more value data if a size was given.
+      --
       if size then
         size = tonumber(size)
         if size >= 0 then
@@ -33,7 +43,9 @@ local function simple_replicate(success_msg)
         end
       end
 
-      local n = 0
+      -- Broadcast the update request to all pools.
+      --
+      local n = 0 -- Tracks # of requests made.
 
       for i = 1, #pools do
         local pool = pools[i]
@@ -49,14 +61,31 @@ local function simple_replicate(success_msg)
         end
       end
 
-      local oks = 0
+      -- Wait for replies, but opportunistically send an
+      -- early success_msg as soon as we can.
+      --
+      if replica_count <= 0 then
+        replica_count = n
+      end
+
+      local sent = nil
+      local oks  = 0
+
       for i = 1, n do
         if apo.recv() then
           oks = oks + 1
         end
+
+        if (not sent) and (oks >= replica_count) then
+          sent, err = sock_send(skt, success_msg)
+        end
       end
 
-      if oks > 0 then
+      if sent then
+        return sent, err
+      end
+
+      if oks >= replica_count then
         return sock_send(skt, success_msg)
       end
     end
@@ -127,17 +156,17 @@ memcached_server_replication = {
     end,
 
   set =
-    simple_replicate("STORED\r\n"),
+    update_replicate("STORED\r\n"),
   add =
-    simple_replicate("STORED\r\n"),
+    update_replicate("STORED\r\n"),
   replace =
-    simple_replicate("STORED\r\n"),
+    update_replicate("STORED\r\n"),
   append =
-    simple_replicate("STORED\r\n"),
+    update_replicate("STORED\r\n"),
   prepend =
-    simple_replicate("STORED\r\n"),
+    update_replicate("STORED\r\n"),
   delete =
-    simple_replicate("DELETED\r\n"),
+    update_replicate("DELETED\r\n"),
 
   flush_all =
     function(pools, skt, cmd, arr)
