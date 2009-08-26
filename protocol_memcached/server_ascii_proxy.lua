@@ -123,9 +123,7 @@ local function forward_arith_create(pool, skt, cmd, arr)
   local amount = arr[2]
 
   if key then
-    amount = amount or 1
-  print("amount ", amount);
-
+    amount = amount or "1"
 
   local downstream = pool.choose(key)
     if downstream and
