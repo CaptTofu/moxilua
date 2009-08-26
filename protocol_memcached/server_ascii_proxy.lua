@@ -116,6 +116,33 @@ end
 
 -----------------------------------
 
+-- Forward an ascii incr/decr command.
+--
+local function forward_arith_create(pool, skt, cmd, arr)
+  local key    = arr[1]
+  local amount = arr[2]
+
+  if key then
+    amount = amount or 1
+  print("amount ", amount);
+
+
+  local downstream = pool.choose(key)
+    if downstream and
+       downstream.addr then
+      if a2x[downstream.kind](downstream, skt, cmd, {
+                                  key    = key,
+                                  amount = amount
+                                }) then
+          return apo.recv()
+      end
+    end
+  end
+
+  return sock_send(skt, "ERROR\r\n")
+end
+
+
 memcached_server_ascii_proxy = {
   get =
     function(pool, skt, cmd, arr)
@@ -144,6 +171,8 @@ memcached_server_ascii_proxy = {
   replace = forward_update_create,
   append  = forward_update_create,
   prepend = forward_update_create,
+  incr    = forward_arith_create,
+  decr    = forward_arith_create,
 
   delete =
     function(pool, skt, cmd, arr)
