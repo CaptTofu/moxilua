@@ -82,7 +82,7 @@ local a2x = {
 
 -- Forward an ascii update command.
 --
-local function forward_update_create(pool, skt, cmd, arr)
+local function forward_update(pool, skt, cmd, arr)
   local key    = arr[1]
   local flag   = arr[2]
   local expire = arr[3]
@@ -118,7 +118,7 @@ end
 
 -- Forward an ascii incr/decr command.
 --
-local function forward_arith_create(pool, skt, cmd, arr)
+local function forward_arith(pool, skt, cmd, arr)
   local key    = arr[1]
   local amount = arr[2]
 
@@ -164,13 +164,13 @@ memcached_server_ascii_proxy = {
       return sock_send(skt, "END\r\n")
     end,
 
-  set     = forward_update_create,
-  add     = forward_update_create,
-  replace = forward_update_create,
-  append  = forward_update_create,
-  prepend = forward_update_create,
-  incr    = forward_arith_create,
-  decr    = forward_arith_create,
+  set     = forward_update,
+  add     = forward_update,
+  replace = forward_update,
+  append  = forward_update,
+  prepend = forward_update,
+  incr    = forward_arith,
+  decr    = forward_arith,
 
   delete =
     function(pool, skt, cmd, arr)
