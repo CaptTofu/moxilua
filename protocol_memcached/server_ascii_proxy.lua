@@ -125,13 +125,13 @@ local function forward_arith(pool, skt, cmd, arr)
   if key then
     amount = amount or "1"
 
-  local downstream = pool.choose(key)
+    local downstream = pool.choose(key)
     if downstream and
        downstream.addr then
       if a2x[downstream.kind](downstream, skt, cmd, {
-                                  key    = key,
-                                  amount = amount
-                                }) then
+                                key    = key,
+                                amount = amount
+                              }) then
           return apo.recv()
       end
     end
@@ -140,6 +140,7 @@ local function forward_arith(pool, skt, cmd, arr)
   return sock_send(skt, "ERROR\r\n")
 end
 
+-----------------------------------
 
 memcached_server_ascii_proxy = {
   get =
