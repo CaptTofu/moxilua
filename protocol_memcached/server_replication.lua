@@ -100,6 +100,8 @@ local function create_replicator(success_msg, min_replicas)
   end
 end
 
+------------------------------------------------------
+
 -- Creates a function that replicates a key-based update
 -- request across all pools, with at least min_replicas
 -- required before sending a success_msg response.
@@ -140,6 +142,8 @@ local function create_update_replicator(success_msg, min_replicas)
   end
 end
 
+------------------------------------------------------
+
 local function create_arith_replicator(min_replicas)
   local replicator = create_replicator(nil, min_replicas)
 
@@ -154,106 +158,125 @@ local function create_arith_replicator(min_replicas)
   end
 end
 
-memcached_server_replication = {
-  get =
-    function(pools, skt, cmd, arr)
-      local keys = arr -- The keys might have duplicates.
-      local need = {}  -- Key'ed by string, value is integer count.
-      for i = 1, #keys do
-        need[keys[i]] = (need[keys[i]] or 0) + 1
-      end
+------------------------------------------------------
 
-      -- A response filter function that tracks the number
-      -- of responses needed per key, decrementing the counts
-      -- the in the need table.
-      --
-      local function filter_need(head, body)
-        local vfound, vlast, key = string.find(head, "^VALUE (%S+)")
-        if vfound and key then
-          local count = need[key]
-          if count then
-            count = count - 1
-            if count <= 0 then
-              count = nil
+local function create_replication_spec(policy)
+  return {
+    get =
+      function(pools, skt, cmd, arr)
+        local keys = arr -- The keys might have duplicates.
+        local need = {}  -- Key'ed by string, value is integer count.
+        for i = 1, #keys do
+          need[keys[i]] = (need[keys[i]] or 0) + 1
+        end
+
+        -- A response filter function that tracks the number
+        -- of responses needed per key, decrementing the counts
+        -- the in the need table.
+        --
+        local function filter_need(head, body)
+          local vfound, vlast, key = string.find(head, "^VALUE (%S+)")
+          if vfound and key then
+            local count = need[key]
+            if count then
+              count = count - 1
+              if count <= 0 then
+                count = nil
+              end
+              need[key] = count
+              return true
             end
-            need[key] = count
-            return true
+          end
+          return false
+        end
+
+        for i = 1, #pools do
+          local pool = pools[i]
+
+          local groups = group_by(keys, pool.choose)
+
+          -- Broadcast multi-get requests to the downstream servers
+          -- in a single pool.
+          --
+          local n = 0
+          for downstream, downstream_keys in pairs(groups) do
+            if msa.proxy_a2x[downstream.kind](downstream, skt,
+                                              "get", { keys = downstream_keys },
+                                              filter_need) then
+              n = n + 1
+            end
+          end
+
+          local oks = 0
+          for i = 1, n do
+            if apo.recv() then
+              oks = oks + 1
+            end
+          end
+
+          -- Regenerate a new keys array based on keys
+          -- that still need values.
+          --
+          keys = {}
+          for key, count in pairs(need) do
+            for j = 1, count do
+              keys[#keys + 1] = key
+            end
+          end
+
+          -- If there aren't any keys left, we can return without
+          -- having to loop through any remaining, secondary pools.
+          --
+          if #keys <= 0 then
+            return sock_send(skt, "END\r\n")
           end
         end
+
+        return sock_send(skt, "END\r\n")
+      end,
+
+    set =
+      create_update_replicator("STORED\r\n",
+                               policy.min_replicas_set or 0),
+    add =
+      create_update_replicator("STORED\r\n",
+                               policy.min_replicas_add or 0),
+    replace =
+      create_update_replicator("STORED\r\n",
+                               policy.min_replicas_replace or 0),
+    append =
+      create_update_replicator("STORED\r\n",
+                               policy.min_replicas_append or 0),
+    prepend =
+      create_update_replicator("STORED\r\n",
+                               policy.min_replicas_prepend or 0),
+    delete =
+      create_update_replicator("DELETED\r\n",
+                               policy.min_replicas_delete or 0),
+
+    incr =
+      create_arith_replicator(policy.min_replicas_incr or 0),
+    decr =
+      create_arith_replicator(policy.min_replicas_decr or 0),
+
+    flush_all =
+      create_replicator("OK\r\n",
+                        policy.min_replicas_flush_all or 0),
+
+    quit =
+      function(pools, skt, cmd, arr)
         return false
       end
+  }
+end
 
-      for i = 1, #pools do
-        local pool = pools[i]
+------------------------------------------------------
 
-        local groups = group_by(keys, pool.choose)
-
-        -- Broadcast multi-get requests to the downstream servers
-        -- in a single pool.
-        --
-        local n = 0
-        for downstream, downstream_keys in pairs(groups) do
-          if msa.proxy_a2x[downstream.kind](downstream, skt,
-                                            "get", { keys = downstream_keys },
-                                            filter_need) then
-            n = n + 1
-          end
-        end
-
-        local oks = 0
-        for i = 1, n do
-          if apo.recv() then
-            oks = oks + 1
-          end
-        end
-
-        -- Regenerate a new keys array based on keys
-        -- that still need values.
-        --
-        keys = {}
-        for key, count in pairs(need) do
-          for j = 1, count do
-            keys[#keys + 1] = key
-          end
-        end
-
-        -- If there aren't any keys left, we can return without
-        -- having to loop through any remaining, secondary pools.
-        --
-        if #keys <= 0 then
-          return sock_send(skt, "END\r\n")
-        end
-      end
-
-      return sock_send(skt, "END\r\n")
-    end,
-
-  set =
-    create_update_replicator("STORED\r\n", 0),
-  add =
-    create_update_replicator("STORED\r\n", 0),
-  replace =
-    create_update_replicator("STORED\r\n", 0),
-  append =
-    create_update_replicator("STORED\r\n", 0),
-  prepend =
-    create_update_replicator("STORED\r\n", 0),
-  delete =
-    create_update_replicator("DELETED\r\n", 0),
-
-  incr =
-    create_arith_replicator(0),
-  decr =
-    create_arith_replicator(0),
-
-  flush_all =
-    create_replicator("OK\r\n", 0),
-
-  quit =
-    function(pools, skt, cmd, arr)
-      return false
-    end
-}
+-- Default policy where all replicas receive all updates,
+-- and conservatively where min_replicas == #replicas.
+--
+memcached_server_replication =
+  create_replication_spec({})
 
 ------------------------------------------------------
 
