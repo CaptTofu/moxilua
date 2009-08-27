@@ -19,6 +19,26 @@ local function create_replicator(success_msg, min_replicas)
   min_replicas = min_replicas or 0
 
   return function(pools, skt, cmd, msg)
+    local first_response_head = nil
+    local first_response_body = nil
+
+    local function first_response_filter(head, body)
+      if (not success_msg) and
+         (not first_response_head) then
+        first_response_head = head
+        first_response_body = body
+      end
+      return false
+    end
+
+    local function first_response()
+      local m = first_response_head .. '\r\n'
+      if first_response_body then
+        m = m .. first_response_body .. '\r\n'
+      end
+      return m
+    end
+
     -- Broadcast the update request to all pools.
     --
     local n = 0 -- Tracks # of requests made.
@@ -30,15 +50,17 @@ local function create_replicator(success_msg, min_replicas)
         local downstream = pool.choose(msg.key)
         if downstream and
            downstream.addr then
-          if msa.proxy_a2x[downstream.kind](downstream, false,
-                                            cmd, msg) then
+          if msa.proxy_a2x[downstream.kind](downstream, skt,
+                                            cmd, msg,
+                                            first_response_filter) then
             n = n + 1
           end
         end
       else
         pool.each(function(downstream)
-                    if msa.proxy_a2x[downstream.kind](downstream, false,
-                                                      cmd, msg) then
+                    if msa.proxy_a2x[downstream.kind](downstream, skt,
+                                                      cmd, msg,
+                                                      first_response_filter) then
                       n = n + 1
                     end
                   end)
@@ -62,7 +84,7 @@ local function create_replicator(success_msg, min_replicas)
       end
 
       if (not sent) and (oks >= min_replicas) then
-        sent, err = sock_send(skt, success_msg)
+        sent, err = sock_send(skt, success_msg or first_response())
       end
     end
 
@@ -71,7 +93,7 @@ local function create_replicator(success_msg, min_replicas)
     end
 
     if oks >= min_replicas then
-      return sock_send(skt, success_msg)
+      return sock_send(skt, success_msg or first_response())
     end
 
     return sock_send(skt, "ERROR\r\n")
@@ -112,6 +134,20 @@ local function create_update_replicator(success_msg, min_replicas)
       end
 
       return replicator(pools, skt, cmd, msg)
+    end
+
+    return sock_send(skt, "ERROR\r\n")
+  end
+end
+
+local function create_arith_replicator(min_replicas)
+  local replicator = create_replicator(nil, min_replicas)
+
+  return function(pools, skt, cmd, arr)
+    local key    = arr[1]
+    local amount = arr[2]
+    if key and amount then
+      return replicator(pools, skt, cmd, { key = key, amount = amount })
     end
 
     return sock_send(skt, "ERROR\r\n")
@@ -204,6 +240,11 @@ memcached_server_replication = {
     create_update_replicator("STORED\r\n", 0),
   delete =
     create_update_replicator("DELETED\r\n", 0),
+
+  incr =
+    create_arith_replicator(0),
+  decr =
+    create_arith_replicator(0),
 
   flush_all =
     create_replicator("OK\r\n", 0),
