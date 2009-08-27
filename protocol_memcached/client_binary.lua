@@ -68,6 +68,26 @@ memcached_client_binary = {
                             recv_callback, "DELETED")
     end,
 
+  incr = 
+    function (conn, recv_callback, args)
+      local key = args.key
+      local amount = args.amount or "1"
+      local req =
+        pack.create_request("INCREMENT", { key = key, amount = amount})
+
+      return pack.send_recv(conn, req, recv_callback)
+    end,
+
+  decr = 
+    function (conn, recv_callback, args)
+      local key = args.key
+      local amount = args.amount or "1"
+      local req =
+        pack.create_request("DECREMENT", { key = key, amount = amount})
+
+      return pack.send_recv(conn, req, recv_callback)
+    end,
+
   flush_all =
     function(conn, recv_callback, args)
       return pack.send_recv(conn,
@@ -75,6 +95,12 @@ memcached_client_binary = {
                             recv_callback, "OK")
     end
 }
+
+
+--------------------------------------------------------
+
+-- Catch all functions for pure-binary clients aware of binary opcodes.
+--
 
 --------------------------------------------------------
 

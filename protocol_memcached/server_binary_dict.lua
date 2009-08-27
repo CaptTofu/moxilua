@@ -42,10 +42,32 @@ msbd[mpb.command.DELETE] =
 
 msbd[mpb.command.INCREMENT] =
   function(dict, skt, req, args)
+    local num = tonumber(dict.tbl[args.key])
+    local num = num + tonumber(args.amount)
+    dict.tbl[args.key] = tostring(num)
+
+    local res =
+      pack.create_response(mpb.command.INCREMENT, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request'),
+        amount = dict.tbl[args.key] 
+      })
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.DECREMENT] =
   function(dict, skt, req, args)
+    local num = tonumber(dict.tbl[args.key])
+    local num = num - tonumber(args.amount)
+    dict.tbl[args.key] = tostring(num)
+
+    local res =
+      pack.create_response(mpb.command.DECREMENT, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request'),
+        amount = dict.tbl[args.key] 
+      })
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.QUIT] =
@@ -132,10 +154,32 @@ msbd[mpb.command.DELETEQ] =
 
 msbd[mpb.command.INCREMENTQ] =
   function(dict, skt, req, args)
+    local num = tonumber(dict.tbl[args.key])
+    local num = num + tonumber(args.amount)
+    dict.tbl[args.key] = tostring(num)
+
+    local res =
+      pack.create_response(mpb.command.INCREMENT, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request'),
+        amount = dict.tbl[args.key] 
+      })
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.DECREMENTQ] =
   function(dict, skt, req, args)
+    local num = tonumber(dict.tbl[args.key])
+    local num = num + tonumber(args.amount)
+    dict.tbl[args.key] = tostring(num)
+
+    local res =
+      pack.create_response(mpb.command.INCREMENT, {
+        status = SUCCESS,
+        opaque = pack.opaque(req, 'request'),
+        amount = dict.tbl[args.key] 
+      })
+    return sock_send(skt, res)
   end
 
 msbd[mpb.command.QUITQ] =

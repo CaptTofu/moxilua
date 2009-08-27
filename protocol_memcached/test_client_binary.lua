@@ -75,5 +75,18 @@ fresh()
 assert(client.get(c, got, {keys = {"a", "b", "c"}}) == "END")
 expected()
 
+fresh()
+assert(client.set(c, got, {key = "a", flag = 0, expire = 0,
+                           data = "1"}) == "STORED")
+expected({".+", EMPTY})
+
+fresh()
+assert(client.get(c, got, {keys = {"a"}}) == "END")
+expected({".+", {key = "a", ext = ".+", data = "1"}})
+
+fresh()
+assert(client.incr(c, got, {keys = {"a"}, amount = "1"}) == "2")
+expected({".+", {key = "a", ext = ".+", data = "2"}})
+
 p("done!")
 
