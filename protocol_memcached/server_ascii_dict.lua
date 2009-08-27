@@ -38,14 +38,14 @@ local dict_arith_map = {
       local num = tonumber(dict.tbl[key])
       local num = num + amount
       dict.tbl[key] = tostring(num)
-      return true, dict.tbl[key] 
+      return true, dict.tbl[key]
     end,
   decr =
     function(dict, key, amount)
       local num = tonumber(dict.tbl[key])
       local num = num - tonumber(amount)
       dict.tbl[key] = tostring(num)
-      return true, dict.tbl[key] 
+      return true, dict.tbl[key]
     end
 }
 
@@ -85,7 +85,7 @@ local function dict_arith(dict, skt, cmd, arr)
   if key then
     if amount then
       amount = tonumber(amount)
-    else 
+    else
       amount = 1
     end
 
@@ -154,4 +154,7 @@ memcached_server_ascii_dict = {
       return false
     end
 }
+
+memcached_server.ascii.dict = memcached_server_ascii_dict
+
 

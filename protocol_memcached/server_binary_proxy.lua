@@ -3,6 +3,8 @@
 --
 memcached_server_binary_proxy = {}
 
+memcached_server.binary.proxy = memcached_server_binary_proxy
+
 local msbp = memcached_server_binary_proxy
 local mpb  = memcached_protocol_binary
 local pack = mpb.pack

@@ -1,4 +1,4 @@
-require('protocol_memcached/test_base')
+require('test_base')
 require('protocol_memcached/client')
 
 client = memcached_client_binary

@@ -1,5 +1,7 @@
 memcached_server_binary_dict = {}
 
+memcached_server.binary.dict = memcached_server_binary_dict
+
 local msbd = memcached_server_binary_dict
 local mpb  = memcached_protocol_binary
 local pack = mpb.pack

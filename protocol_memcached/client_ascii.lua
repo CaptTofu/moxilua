@@ -25,16 +25,10 @@ end
 
 ----------------------------------------------------
 
---
 -- Create a closure that does an ascii increment or decrement.
 --
 local function arith_create(cmd)
   return function(conn, recv_callback, args, value)
-    if value then
-      value = tonumber(value)
-    else 
-      value = 1
-    end
     return sock_send_recv(conn,
         cmd .. " " ..
         (args.key) .. " " ..

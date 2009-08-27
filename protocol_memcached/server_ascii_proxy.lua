@@ -91,7 +91,7 @@ local function forward_update(pool, skt, cmd, arr)
   if key and flag and expire and size then
     size = tonumber(size)
     if size >= 0 then
-      local data, err = sock_recv(skt, tonumber(size) + 2)
+      local data, err = sock_recv(skt, size + 2)
       if not data then
         return data, err
       end
@@ -125,13 +125,13 @@ local function forward_arith(pool, skt, cmd, arr)
   if key then
     amount = amount or "1"
 
-  local downstream = pool.choose(key)
+    local downstream = pool.choose(key)
     if downstream and
        downstream.addr then
       if a2x[downstream.kind](downstream, skt, cmd, {
-                                  key    = key,
-                                  amount = amount
-                                }) then
+                                key    = key,
+                                amount = amount
+                              }) then
           return apo.recv()
       end
     end
@@ -140,6 +140,7 @@ local function forward_arith(pool, skt, cmd, arr)
   return sock_send(skt, "ERROR\r\n")
 end
 
+-----------------------------------
 
 memcached_server_ascii_proxy = {
   get =
@@ -216,3 +217,8 @@ memcached_server_ascii_proxy = {
       return false
     end
 }
+
+memcached_server.ascii.proxy = memcached_server_ascii_proxy
+
+memcached_server.ascii.proxy_a2x = a2x
+

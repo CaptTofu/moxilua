@@ -62,18 +62,21 @@ body = string.gsub(body,
   "  {'%1'},")
 
 print([=[
--- Generated from PROTOCOL_2lua.lua
+-- Generated from running 'lua protocol_gearman/PROTOCOL_2lua.lua'
 --
-gearman_protocol = {
+PROTOCOL_gearman = {
   request = {},
   response = {}
 }
 
-local request  = gearman_protocol.request;
-local response = gearman_protocol.response;
+do
+
+local request  = PROTOCOL_gearman.request;
+local response = PROTOCOL_gearman.response;
 ]=])
 
 print('local x = {{')
 print(body)
-print('}}')
+print('}}\n')
+print('end')
 

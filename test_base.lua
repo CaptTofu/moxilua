@@ -16,7 +16,7 @@ function printa(a, prefix)
           printa(v, prefix .. '  ')
           p(prefix .. '}')
         else
-          p(prefix .. i .. ' ' .. v)
+          p(prefix .. i .. ' ' .. tostring(v))
         end
       end
     end

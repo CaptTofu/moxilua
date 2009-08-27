@@ -1,3 +1,5 @@
+require 'test_base'
+
 local function field(size, name)
   return { name = name, size = size }
 end
@@ -10,7 +12,7 @@ protocol_gearman = {
     field(4, "type"),
     field(4, "size")
   },
-  packet_types = [=[#   Name                Magic  Type
+  packet_kinds = [=[#   Name                Magic  Type
                     1   CAN_DO              REQ    Worker
                     2   CANT_DO             REQ    Worker
                     3   RESET_ABILITIES     REQ    Worker
@@ -55,53 +57,139 @@ protocol_gearman = {
                     36  SUBMIT_JOB_EPOCH    REQ    Client]=],
   Client = {
     REQ = {},
-    RES = {}
+    RES = {},
+    REQ_by_name = {},
+    RES_by_name = {}
   },
   Worker = {
     REQ = {},
-    RES = {}
+    RES = {},
+    REQ_by_name = {},
+    RES_by_name = {}
   }
 }
 
-for id, name, type, sides in
-      string.gfind(protocol_gearman.packet_types,
-                  "%s*(%d+)%s+([%u_]+)%s+([%u]+)%s+([%a%/]+)") do
-  for side in string.gfind(sides,
-                           "(%a+)") do
-    protocol_gearman[side][type][id] = {
-      id = id, name = name, type = type, side = side
-    }
+--------------------------------------------
+
+local sides = {
+  client = 'Client',
+  worker = 'Worker'
+}
+
+local kinds = {
+  request = "REQ",
+  response = "RES"
+}
+
+for side, Side in pairs(sides) do
+  protocol_gearman[side] = protocol_gearman[Side]
+
+  for kind, kind_abbrev in pairs(kinds) do
+    protocol_gearman[side][kind] =
+      protocol_gearman[side][kind_abbrev]
+
+    protocol_gearman[side][kind .. '_by_name'] =
+      protocol_gearman[side][kind_abbrev .. '_by_name']
   end
 end
 
-for id, name, type, sides, type2, sides2 in
-      string.gfind(protocol_gearman.packet_types,
+--------------------------------------------
+
+for id, name, kind, sides in
+      string.gfind(protocol_gearman.packet_kinds,
+                  "%s*(%d+)%s+([%u_]+)%s+([%u]+)%s+([%a%/]+)") do
+  for side in string.gfind(sides,
+                           "(%a+)") do
+    protocol_gearman[side][kind][id] = {
+      id = id, name = name, kind = kind, side = side
+    }
+    protocol_gearman[side][kind .. '_by_name'][name] =
+      protocol_gearman[side][kind][id]
+  end
+end
+
+for id, name, kind, sides, kind2, sides2 in
+      string.gfind(protocol_gearman.packet_kinds,
                   "%s*(%d+)%s+([%u_]+)%s+([%u]+)%s+([%a%/]+)" ..
                                      "%s+([%u]+)%s+([%a%/]+)") do
   for side in string.gfind(sides2,
                            "(%a+)") do
-    protocol_gearman[side][type2][id] = {
-      id = id, name = name, type = type2, side = side
+    protocol_gearman[side][kind2][id] = {
+      id = id, name = name, kind = kind2, side = side
     }
+    protocol_gearman[side][kind2 .. '_by_name'][name] =
+      protocol_gearman[side][kind2][id]
   end
 end
 
+--------------------------------------------
+
+-- Post-processing on the protocol_gearman/PROTOCOL.lua tables
+--
+require 'protocol_gearman/PROTOCOL'
+
+for kind, kind_abbrev in pairs(kinds) do
+  for sides, v in pairs(PROTOCOL_gearman[kind]) do
+    for side in string.gfind(sides, "(%a+)") do
+      for x, y in pairs(v) do
+        local cmds   = nil
+        local params = {}
+
+        local function cmds_emit()
+          if cmds and #params > 0 then
+            for cmd in string.gfind(cmds, "([%a_]+)") do
+              local m = protocol_gearman[side][kind_abbrev .. '_by_name'][cmd]
+              assert(m)
+              assert(not m.params)
+              m.params = params
+            end
+          end
+        end
+
+        for z, w in pairs(y) do
+          if type(w) == 'table' then
+            for j, param in pairs(w) do
+              local param_desc = string.gsub(string.lower(param),
+                                             "^(null byte terminated) (.*)",
+                                             "%2 %1")
+
+              local _, _, param_name = string.find(param_desc, "(%a+)")
+
+              param_name = string.lower(param_name)
+
+              if param_name == 'function' then
+                param_name = 'name'
+              end
+
+              param_null = string.find(param_desc,
+                                       "null byte terminated") ~= nil
+
+              params[#params + 1 ] = {
+                name = param_name,
+                desc = param_desc,
+                null_terminated = param_null
+              }
+            end
+          else
+            cmds_emit()
+            cmds = w
+          end
+        end
+
+        cmds_emit()
+      end
+    end
+  end
+end
+
+--------------------------------------------
+
 if false then
-  print('--------------')
-  for k, v in pairs(protocol_gearman.Client.REQ) do
-    print(k, v)
-  end
-  print('---------')
-  for k, v in pairs(protocol_gearman.Client.RES) do
-    print(k, v)
-  end
-  print('--------------')
-  for k, v in pairs(protocol_gearman.Worker.REQ) do
-    print(k, v)
-  end
-  print('---------')
-  for k, v in pairs(protocol_gearman.Worker.RES) do
-    print(k, v)
-  end
+  require('test_base')
+
+  print('------------------------------')
+  printa(protocol_gearman.client)
+  print('------------------------------')
+  printa(protocol_gearman.worker)
 end
 

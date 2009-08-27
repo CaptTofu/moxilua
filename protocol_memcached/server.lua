@@ -1,3 +1,10 @@
+memcached_server = {
+  ascii = {},
+  binary = {}
+}
+
+------------------------------------------------------
+
 function upstream_session_memcached_ascii(self_addr, env, upstream_skt)
   local req = true
   while req do
