@@ -72,8 +72,16 @@ memcached_client_binary = {
     function (conn, recv_callback, args)
       local key = args.key
       local amount = args.amount or "1"
+      local expire = args.expire or 0
+      local initial = args.initial or 0
+
+      local amount_bytes = string.char(network_bytes(amount, 8))
+      local initial_bytes = string.char(network_bytes(initial, 8))
+      local expire_bytes = string.char(network_bytes(expire, 4))
+
+      local ext = amount_bytes .. initial_bytes .. expire_bytes
       local req =
-        pack.create_request("INCREMENT", { key = key, amount = amount})
+        pack.create_request("INCREMENT", { key = key, ext = ext})
 
       return pack.send_recv(conn, req, recv_callback)
     end,
@@ -82,8 +90,16 @@ memcached_client_binary = {
     function (conn, recv_callback, args)
       local key = args.key
       local amount = args.amount or "1"
+      local expire = args.expire or 0
+      local initial = args.initial or 0
+
+      local amount_bytes = string.char(network_bytes(amount, 8))
+      local initial_bytes = string.char(network_bytes(initial, 8))
+      local expire_bytes = string.char(network_bytes(expire, 4))
+
+      local ext = amount_bytes .. initial_bytes .. expire_bytes
       local req =
-        pack.create_request("DECREMENT", { key = key, amount = amount})
+        pack.create_request("DECREMENT", { key = key, ext = ext})
 
       return pack.send_recv(conn, req, recv_callback)
     end,

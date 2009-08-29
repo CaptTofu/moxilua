@@ -1,7 +1,5 @@
 memcached_server_binary_dict = {}
 
-memcached_server.binary.dict = memcached_server_binary_dict
-
 local msbd = memcached_server_binary_dict
 local mpb  = memcached_protocol_binary
 local pack = mpb.pack
@@ -45,7 +43,9 @@ msbd[mpb.command.DELETE] =
 msbd[mpb.command.INCREMENT] =
   function(dict, skt, req, args)
     local num = tonumber(dict.tbl[args.key])
-    local num = num + tonumber(args.amount)
+    local amount = network_bytes_string_to_number(args.ext, 0, 8);
+    print("amount " .. amount);
+    num = num + amount; 
     dict.tbl[args.key] = tostring(num)
 
     local res =
@@ -60,7 +60,7 @@ msbd[mpb.command.INCREMENT] =
 msbd[mpb.command.DECREMENT] =
   function(dict, skt, req, args)
     local num = tonumber(dict.tbl[args.key])
-    local num = num - tonumber(args.amount)
+    local num = num - tonumber(args.ext)
     dict.tbl[args.key] = tostring(num)
 
     local res =
@@ -157,7 +157,9 @@ msbd[mpb.command.DELETEQ] =
 msbd[mpb.command.INCREMENTQ] =
   function(dict, skt, req, args)
     local num = tonumber(dict.tbl[args.key])
-    local num = num + tonumber(args.amount)
+    local amount = network_bytes_string_to_number(args.ext, 0, 8);
+    print("amount " .. amount);
+    num = num + amount; 
     dict.tbl[args.key] = tostring(num)
 
     local res =
